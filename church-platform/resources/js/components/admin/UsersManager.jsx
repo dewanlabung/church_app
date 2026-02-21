@@ -1,0 +1,174 @@
+import React, { useState, useEffect } from 'react';
+import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
+import { get, post, put, del, upload } from '../shared/api';
+
+export default function UsersManager() {
+    const [items, setItems] = useState([]);
+    const [meta, setMeta] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [editing, setEditing] = useState(null);
+    const [form, setForm] = useState({ name: '', email: '', is_admin: false });
+    const [alert, setAlert] = useState(null);
+    const [loading, setLoading] = useState(false);
+
+    const fetchItems = async (page = 1) => {
+        setLoading(true);
+        try {
+            const data = await get(`/api/users?page=${page}`);
+            setItems(data.data || []);
+            setMeta(data);
+        } catch (e) {
+            setItems([]);
+            setMeta(null);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => { fetchItems(); }, []);
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
+    };
+
+    const openCreate = () => {
+        setEditing(null);
+        setForm({ name: '', email: '', is_admin: false });
+        setShowModal(true);
+    };
+
+    const openEdit = (item) => {
+        setEditing(item);
+        setForm({ name: item.name, email: item.email, is_admin: !!item.is_admin });
+        setShowModal(true);
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            if (editing) {
+                await put(`/api/users/${editing.id}`, form);
+                setAlert({ type: 'success', message: 'User updated.' });
+            } else {
+                await post('/api/users', form);
+                setAlert({ type: 'success', message: 'User created.' });
+            }
+            setShowModal(false);
+            fetchItems();
+        } catch (e) {
+            setAlert({ type: 'error', message: e.message });
+        }
+    };
+
+    const handleDelete = async (item) => {
+        if (!confirm('Delete this user?')) return;
+        try {
+            await del(`/api/users/${item.id}`);
+            setAlert({ type: 'success', message: 'User deleted.' });
+            fetchItems();
+        } catch (e) {
+            setAlert({ type: 'error', message: e.message });
+        }
+    };
+
+    const columns = [
+        { key: 'name', label: 'Name' },
+        { key: 'email', label: 'Email' },
+        {
+            key: 'is_admin',
+            label: 'Role',
+            render: (row) => (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    row.is_admin
+                        ? 'bg-purple-100 text-purple-800'
+                        : 'bg-gray-100 text-gray-800'
+                }`}>
+                    {row.is_admin ? 'Admin' : 'Member'}
+                </span>
+            ),
+        },
+        {
+            key: 'created_at',
+            label: 'Created',
+            render: (row) => row.created_at ? new Date(row.created_at).toLocaleDateString() : '-',
+        },
+    ];
+
+    return (
+        <div>
+            <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+                <button onClick={openCreate} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+                    + Add User
+                </button>
+            </div>
+
+            <Alert {...alert} onClose={() => setAlert(null)} />
+
+            {/* Placeholder notice */}
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
+                <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold text-amber-800">User management coming soon</h3>
+                        <p className="mt-1 text-sm text-amber-700">
+                            Full user management capabilities including role assignments, account status controls, and bulk operations are currently under development. Stay tuned for updates.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Data table with empty state */}
+            <div className="bg-white rounded-xl shadow-sm border">
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <svg className="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                    </div>
+                ) : items.length > 0 ? (
+                    <>
+                        <DataTable columns={columns} data={items} actions={(row) => (
+                            <div className="flex gap-2">
+                                <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
+                                <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
+                            </div>
+                        )} />
+                        <Pagination meta={meta} onPageChange={fetchItems} />
+                    </>
+                ) : (
+                    <div className="text-center py-16 px-4">
+                        <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">No users found</h3>
+                        <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                            Users will appear here once the user management API is available. Click the button above to add a new user.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* Create / Edit modal */}
+            <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit User' : 'Add User'}>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <FormField label="Name" name="name" value={form.name} onChange={handleChange} required placeholder="Full name" />
+                    <FormField label="Email" name="email" type="email" value={form.email} onChange={handleChange} required placeholder="email@example.com" />
+                    <FormField label="Administrator" name="is_admin" type="checkbox" value={form.is_admin} onChange={handleChange} />
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
+                    </div>
+                </form>
+            </Modal>
+        </div>
+    );
+}
