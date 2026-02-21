@@ -112,7 +112,7 @@ export default function PostsManager() {
         const colors = {
             draft: 'bg-gray-100 text-gray-800',
             published: 'bg-green-100 text-green-800',
-            archived: 'bg-yellow-100 text-yellow-800',
+            scheduled: 'bg-yellow-100 text-yellow-800',
         };
         return (
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
@@ -138,7 +138,7 @@ export default function PostsManager() {
     const statusOptions = [
         { value: 'draft', label: 'Draft' },
         { value: 'published', label: 'Published' },
-        { value: 'archived', label: 'Archived' },
+        { value: 'scheduled', label: 'Scheduled' },
     ];
 
     return (

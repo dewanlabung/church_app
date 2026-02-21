@@ -44,7 +44,7 @@ class VerseController extends Controller
     {
         $validated = $request->validate([
             'reference'   => ['required', 'string', 'max:255'],
-            'text'        => ['required', 'string'],
+            'verse_text'  => ['required', 'string'],
             'display_date' => ['required', 'date', 'unique:verses,display_date'],
             'translation' => ['nullable', 'string', 'max:50'],
         ]);
@@ -64,7 +64,7 @@ class VerseController extends Controller
     {
         $validated = $request->validate([
             'reference'   => ['sometimes', 'required', 'string', 'max:255'],
-            'text'        => ['sometimes', 'required', 'string'],
+            'verse_text'  => ['sometimes', 'required', 'string'],
             'display_date' => ['sometimes', 'required', 'date', 'unique:verses,display_date,' . $verse->id],
             'translation' => ['nullable', 'string', 'max:50'],
         ]);

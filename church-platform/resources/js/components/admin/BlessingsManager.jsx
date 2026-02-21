@@ -7,7 +7,7 @@ export default function BlessingsManager() {
     const [meta, setMeta] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ title: '', content: '', date: '', author: '' });
+    const [form, setForm] = useState({ title: '', content: '', display_date: '', author: '' });
     const [alert, setAlert] = useState(null);
 
     const fetchItems = async (page = 1) => {
@@ -19,8 +19,8 @@ export default function BlessingsManager() {
 
     useEffect(() => { fetchItems(); }, []);
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-    const openCreate = () => { setEditing(null); setForm({ title: '', content: '', date: '', author: '' }); setShowModal(true); };
-    const openEdit = (item) => { setEditing(item); setForm({ title: item.title, content: item.content, date: item.date, author: item.author || '' }); setShowModal(true); };
+    const openCreate = () => { setEditing(null); setForm({ title: '', content: '', display_date: '', author: '' }); setShowModal(true); };
+    const openEdit = (item) => { setEditing(item); setForm({ title: item.title, content: item.content, display_date: item.display_date, author: item.author || '' }); setShowModal(true); };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -40,7 +40,7 @@ export default function BlessingsManager() {
     const columns = [
         { key: 'title', label: 'Title' },
         { key: 'content', label: 'Content', render: (r) => (r.content || '').substring(0, 60) + '...' },
-        { key: 'date', label: 'Date' },
+        { key: 'display_date', label: 'Date' },
         { key: 'author', label: 'Author' },
     ];
 
@@ -64,7 +64,7 @@ export default function BlessingsManager() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
                     <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} required />
-                    <FormField label="Date" name="date" type="date" value={form.date} onChange={handleChange} required />
+                    <FormField label="Date" name="display_date" type="date" value={form.display_date} onChange={handleChange} required />
                     <FormField label="Author" name="author" value={form.author} onChange={handleChange} />
                     <div className="flex justify-end gap-3 pt-2">
                         <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>

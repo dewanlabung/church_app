@@ -7,7 +7,7 @@ export default function VersesManager() {
     const [meta, setMeta] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ reference: '', text: '', date: '', translation: '' });
+    const [form, setForm] = useState({ reference: '', verse_text: '', display_date: '', translation: '' });
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
 
@@ -25,8 +25,8 @@ export default function VersesManager() {
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-    const openCreate = () => { setEditing(null); setForm({ reference: '', text: '', date: '', translation: '' }); setShowModal(true); };
-    const openEdit = (item) => { setEditing(item); setForm({ reference: item.reference, text: item.text, date: item.date, translation: item.translation || '' }); setShowModal(true); };
+    const openCreate = () => { setEditing(null); setForm({ reference: '', verse_text: '', display_date: '', translation: '' }); setShowModal(true); };
+    const openEdit = (item) => { setEditing(item); setForm({ reference: item.reference, verse_text: item.verse_text, display_date: item.display_date, translation: item.translation || '' }); setShowModal(true); };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -45,8 +45,8 @@ export default function VersesManager() {
 
     const columns = [
         { key: 'reference', label: 'Reference' },
-        { key: 'text', label: 'Text', render: (r) => r.text?.substring(0, 60) + '...' },
-        { key: 'date', label: 'Date' },
+        { key: 'verse_text', label: 'Text', render: (r) => (r.verse_text || '').substring(0, 60) + '...' },
+        { key: 'display_date', label: 'Date' },
         { key: 'translation', label: 'Translation' },
     ];
 
@@ -69,8 +69,8 @@ export default function VersesManager() {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit Verse' : 'Add Verse'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Reference" name="reference" value={form.reference} onChange={handleChange} required placeholder="John 3:16" />
-                    <FormField label="Text" name="text" type="textarea" value={form.text} onChange={handleChange} required />
-                    <FormField label="Date" name="date" type="date" value={form.date} onChange={handleChange} required />
+                    <FormField label="Text" name="verse_text" type="textarea" value={form.verse_text} onChange={handleChange} required />
+                    <FormField label="Date" name="display_date" type="date" value={form.display_date} onChange={handleChange} required />
                     <FormField label="Translation" name="translation" value={form.translation} onChange={handleChange} placeholder="NIV, KJV, etc." />
                     <div className="flex justify-end gap-3 pt-2">
                         <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>

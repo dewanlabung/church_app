@@ -37,10 +37,7 @@ class PostController extends Controller
 
         $posts = $query->paginate($request->get('per_page', 15));
 
-        return response()->json([
-            'success' => true,
-            'data'    => $posts,
-        ]);
+        return response()->json($posts);
     }
 
     /**
@@ -69,10 +66,7 @@ class PostController extends Controller
 
         $posts = $query->paginate($request->get('per_page', 15));
 
-        return response()->json([
-            'success' => true,
-            'data'    => $posts,
-        ]);
+        return response()->json($posts);
     }
 
     /**
@@ -89,10 +83,7 @@ class PostController extends Controller
             ->latest('published_at')
             ->paginate($request->get('per_page', 10));
 
-        return response()->json([
-            'success' => true,
-            'data'    => $posts,
-        ]);
+        return response()->json($posts);
     }
 
     /**
@@ -119,7 +110,7 @@ class PostController extends Controller
             'excerpt'          => 'nullable|string|max:500',
             'category'         => 'nullable|string|max:255',
             'featured_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'status'           => 'nullable|string|in:draft,published,archived',
+            'status'           => 'nullable|string|in:draft,published,scheduled',
             'is_featured'      => 'nullable|boolean',
             'published_at'     => 'nullable|date',
             'author_name'      => 'nullable|string|max:255',
@@ -182,7 +173,7 @@ class PostController extends Controller
             'excerpt'          => 'nullable|string|max:500',
             'category'         => 'nullable|string|max:255',
             'featured_image'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'status'           => 'nullable|string|in:draft,published,archived',
+            'status'           => 'nullable|string|in:draft,published,scheduled',
             'is_featured'      => 'nullable|boolean',
             'published_at'     => 'nullable|date',
             'author_name'      => 'nullable|string|max:255',
