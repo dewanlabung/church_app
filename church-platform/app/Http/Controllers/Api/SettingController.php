@@ -69,7 +69,17 @@ class SettingController extends Controller
             'meta_title'        => 'nullable|string|max:70',
             'meta_description'  => 'nullable|string|max:160',
             'meta_keywords'     => 'nullable|string|max:500',
+            'theme_config'      => 'nullable|json|max:10000',
+            'widget_config'     => 'nullable|json|max:10000',
         ]);
+
+        // Decode JSON strings to arrays for proper storage
+        if (isset($validated['theme_config']) && is_string($validated['theme_config'])) {
+            $validated['theme_config'] = json_decode($validated['theme_config'], true);
+        }
+        if (isset($validated['widget_config']) && is_string($validated['widget_config'])) {
+            $validated['widget_config'] = json_decode($validated['widget_config'], true);
+        }
 
         $setting = Setting::first();
 
