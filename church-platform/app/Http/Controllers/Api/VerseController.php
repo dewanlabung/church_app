@@ -14,7 +14,7 @@ class VerseController extends Controller
      */
     public function index(): JsonResponse
     {
-        $verses = Verse::orderBy('date', 'desc')->paginate(15);
+        $verses = Verse::orderBy('display_date', 'desc')->paginate(15);
 
         return response()->json($verses);
     }
@@ -24,7 +24,7 @@ class VerseController extends Controller
      */
     public function today(): JsonResponse
     {
-        $verse = Verse::where('date', now()->toDateString())->first();
+        $verse = Verse::where('display_date', now()->toDateString())->first();
 
         if (!$verse) {
             return response()->json([
@@ -45,7 +45,7 @@ class VerseController extends Controller
         $validated = $request->validate([
             'reference'   => ['required', 'string', 'max:255'],
             'text'        => ['required', 'string'],
-            'date'        => ['required', 'date', 'unique:verses,date'],
+            'display_date' => ['required', 'date', 'unique:verses,display_date'],
             'translation' => ['nullable', 'string', 'max:50'],
         ]);
 
@@ -65,7 +65,7 @@ class VerseController extends Controller
         $validated = $request->validate([
             'reference'   => ['sometimes', 'required', 'string', 'max:255'],
             'text'        => ['sometimes', 'required', 'string'],
-            'date'        => ['sometimes', 'required', 'date', 'unique:verses,date,' . $verse->id],
+            'display_date' => ['sometimes', 'required', 'date', 'unique:verses,display_date,' . $verse->id],
             'translation' => ['nullable', 'string', 'max:50'],
         ]);
 

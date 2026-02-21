@@ -44,7 +44,7 @@ class AdminController extends Controller
         ];
 
         $recentPrayerRequests = PrayerRequest::latest()->take(5)->get();
-        $upcomingEvents = Event::where('date', '>=', now())->orderBy('date', 'asc')->take(5)->get();
+        $upcomingEvents = Event::where('start_date', '>=', now())->orderBy('start_date', 'asc')->take(5)->get();
         $recentContacts = ContactMessage::latest()->take(5)->get();
 
         return view('admin.dashboard', compact(

@@ -14,7 +14,7 @@ class BlessingController extends Controller
      */
     public function index(): JsonResponse
     {
-        $blessings = Blessing::orderBy('date', 'desc')->paginate(15);
+        $blessings = Blessing::orderBy('display_date', 'desc')->paginate(15);
 
         return response()->json($blessings);
     }
@@ -24,7 +24,7 @@ class BlessingController extends Controller
      */
     public function today(): JsonResponse
     {
-        $blessing = Blessing::where('date', now()->toDateString())->first();
+        $blessing = Blessing::where('display_date', now()->toDateString())->first();
 
         if (!$blessing) {
             return response()->json([
@@ -45,7 +45,7 @@ class BlessingController extends Controller
         $validated = $request->validate([
             'title'   => ['required', 'string', 'max:255'],
             'content' => ['required', 'string'],
-            'date'    => ['required', 'date', 'unique:blessings,date'],
+            'display_date' => ['required', 'date', 'unique:blessings,display_date'],
             'author'  => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -65,7 +65,7 @@ class BlessingController extends Controller
         $validated = $request->validate([
             'title'   => ['sometimes', 'required', 'string', 'max:255'],
             'content' => ['sometimes', 'required', 'string'],
-            'date'    => ['sometimes', 'required', 'date', 'unique:blessings,date,' . $blessing->id],
+            'display_date' => ['sometimes', 'required', 'date', 'unique:blessings,display_date,' . $blessing->id],
             'author'  => ['nullable', 'string', 'max:255'],
         ]);
 
