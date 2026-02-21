@@ -2,6 +2,7 @@
 var API = '/api';
 var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','about'];
 var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',about:'About'};
+var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',about:'\u26EA'};
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
@@ -12,6 +13,27 @@ var allBooks = [];
 var bookFilter = 'All';
 var churchSettings = {};
 
+/* ===== THEME TOGGLE ===== */
+function getTheme() {
+  return localStorage.getItem('church-theme') || 'dark';
+}
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('church-theme', theme);
+  var btn = document.getElementById('theme-toggle');
+  btn.innerHTML = theme === 'dark' ? '\u263E' : '\u2600';
+  btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  // Update PWA theme-color
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = theme === 'dark' ? '#0C0E12' : '#F8F6F2';
+}
+function toggleTheme() {
+  setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+}
+// Apply saved theme on load
+(function() { setTheme(getTheme()); })();
+
+/* ===== API ===== */
 function apiCall(path, opts) {
   opts = opts || {};
   return fetch(API + path, Object.assign({
@@ -27,6 +49,7 @@ function apiCall(path, opts) {
   }).catch(function(e) { console.error('API error:', path, e); return null; });
 }
 
+/* ===== NAV ===== */
 function buildNav() {
   var nl = document.getElementById('nav-links');
   var ml = document.getElementById('mobile-links');
@@ -34,7 +57,8 @@ function buildNav() {
   PAGES.forEach(function(p) {
     var cls = p === currentPage ? 'nav-link active' : 'nav-link';
     nl.innerHTML += '<li><button class="' + cls + '" onclick="navigate(\'' + p + '\')">' + NAV_LABELS[p] + '</button></li>';
-    ml.innerHTML += '<button class="' + cls + '" onclick="navigate(\'' + p + '\')">' + NAV_LABELS[p] + '</button>';
+    var mcls = p === currentPage ? 'mobile-nav-item active' : 'mobile-nav-item';
+    ml.innerHTML += '<button class="' + mcls + '" onclick="navigate(\'' + p + '\')"><span class="mobile-nav-icon">' + NAV_ICONS[p] + '</span>' + NAV_LABELS[p] + '</button>';
   });
 }
 
@@ -44,23 +68,30 @@ function navigate(page) {
     document.getElementById('page-' + p).classList.toggle('active', p === page);
   });
   buildNav();
-  document.getElementById('mobile-menu').classList.remove('open');
+  closeMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleMobile() { document.getElementById('mobile-menu').classList.toggle('open'); }
+/* ===== MOBILE MENU ===== */
+function toggleMobile() {
+  var menu = document.getElementById('mobile-menu');
+  menu.classList.toggle('open');
+  document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+}
+function closeMobile() {
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.body.style.overflow = '';
+}
 
+/* ===== UTILS ===== */
 function showToast(msg) {
   var t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(function() { t.classList.remove('show'); }, 3000);
 }
-
-function openModal(type) { document.getElementById('modal-' + type).classList.add('open'); }
-function closeModal(type) { document.getElementById('modal-' + type).classList.remove('open'); }
-
-function renderStars(rating) { var m = 5; return '\u2605'.repeat(rating) + '\u2606'.repeat(m - rating); }
-
+function openModal(type) { document.getElementById('modal-' + type).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeModal(type) { document.getElementById('modal-' + type).classList.remove('open'); document.body.style.overflow = ''; }
+function renderStars(rating) { return '\u2605'.repeat(rating) + '\u2606'.repeat(5 - rating); }
 function buildStarInput() {
   var c = document.getElementById('star-input'); c.innerHTML = '';
   for (var i = 1; i <= 5; i++) {
@@ -72,14 +103,13 @@ function buildStarInput() {
     c.appendChild(b);
   }
 }
-
 function fmtDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
-
 function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+/* ===== CARD RENDERERS ===== */
 function prayerCard(p) {
   var prayed = prayedIds[p.id];
   return '<div class="card"><div class="prayer-name">' + esc(p.name) + '</div>' +
@@ -88,14 +118,12 @@ function prayerCard(p) {
     '<div class="prayer-footer"><span class="prayer-date">' + fmtDate(p.created_at) + '</span>' +
     '<button class="pray-btn ' + (prayed ? 'prayed' : '') + '" onclick="doPray(' + p.id + ')">\uD83D\uDE4F ' + (p.prayer_count || 0) + ' ' + (prayed ? 'Prayed' : 'Pray') + '</button></div></div>';
 }
-
 function eventCard(e) {
   return '<div class="card"><h3 class="card-title">' + esc(e.title) + '</h3>' +
     '<p class="card-meta">\uD83D\uDCC5 ' + fmtDate(e.start_date) + (e.start_time ? ' \u2022 \u23F0 ' + e.start_time.slice(0,5) : '') + '</p>' +
     (e.location ? '<p class="card-meta">\uD83D\uDCCD ' + esc(e.location) + '</p>' : '') +
     '<p class="card-desc">' + esc(e.description || '') + '</p></div>';
 }
-
 function bookCard(b, i) {
   return '<div class="book-card"><div class="book-cover">' + BOOK_ICONS[i % BOOK_ICONS.length] + '</div>' +
     '<div class="book-info"><div class="book-title">' + esc(b.title) + '</div>' +
@@ -106,7 +134,6 @@ function bookCard(b, i) {
     (b.pdf_file ? '<button class="book-btn book-btn-pdf" onclick="downloadBook(' + b.id + ')">\uD83D\uDCE5 PDF</button>' : '') +
     '</div></div></div>';
 }
-
 function studyCard(s) {
   return '<div class="card"><span class="card-badge badge-study">' + esc(s.category || 'Study') + '</span>' +
     '<h3 class="card-title">' + esc(s.title) + '</h3>' +
@@ -119,7 +146,6 @@ function studyCard(s) {
     (s.scripture_reference ? '<p class="card-meta" style="margin-top:0.4rem">\uD83D\uDCD6 ' + esc(s.scripture_reference) + '</p>' : '') +
     '</div>';
 }
-
 function sermonCard(s) {
   var playUrl = s.video_url || s.audio_url || '';
   return '<div class="sermon-card" style="margin-bottom:1rem">' +
@@ -130,7 +156,6 @@ function sermonCard(s) {
     (s.series ? '<span class="card-badge badge-worship" style="margin-top:0.4rem">' + esc(s.series) + '</span>' : '') +
     '</div></div>';
 }
-
 function reviewCard(r) {
   return '<div class="card"><div class="review-stars">' + renderStars(r.rating) + '</div>' +
     (r.title ? '<div class="card-title" style="font-size:0.95rem;margin-bottom:0.3rem">' + esc(r.title) + '</div>' : '') +
@@ -138,13 +163,13 @@ function reviewCard(r) {
     '<div class="review-author">\u2014 ' + esc(r.name) + ' \u2022 ' + fmtDate(r.created_at) + '</div></div>';
 }
 
+/* ===== ACTIONS ===== */
 function doPray(id) {
   if (prayedIds[id]) return;
   apiCall('/prayer-requests/' + id + '/pray', { method: 'POST' }).then(function(res) {
     if (res) { prayedIds[id] = true; showToast('\uD83D\uDE4F Thank you for praying.'); loadPrayers(); }
   });
 }
-
 function submitPrayer() {
   var name = document.getElementById('prayer-name').value;
   var subject = document.getElementById('prayer-subject').value;
@@ -168,7 +193,6 @@ function submitPrayer() {
     }
   });
 }
-
 function submitReview() {
   var name = document.getElementById('review-name').value;
   var email = document.getElementById('review-email').value;
@@ -191,21 +215,18 @@ function submitReview() {
     }
   });
 }
-
 function submitDonation() {
   var custom = document.getElementById('custom-amount').value;
   var amount = custom ? parseFloat(custom) : selectedGiving;
   if (!amount || amount < 1) { showToast('Please select or enter an amount.'); return; }
   showToast('\uD83D\uDC9B Thank you for your generous gift of $' + amount + '! (Payment integration coming soon)');
 }
-
 function downloadBook(id) {
   apiCall('/books/' + id + '/download').then(function(res) {
     if (res && res.success && res.data && res.data.download_url) { window.open(res.data.download_url); }
     else { showToast('PDF not available for this book.'); }
   });
 }
-
 function filterBooks() {
   var search = document.getElementById('book-search').value.toLowerCase();
   var filtered = allBooks.filter(function(b) {
@@ -215,13 +236,13 @@ function filterBooks() {
   });
   document.getElementById('all-books').innerHTML = filtered.map(function(b, i) { return bookCard(b, i); }).join('') || '<p style="color:var(--text-muted)">No books found.</p>';
 }
-
 function setBookFilter(cat) {
   bookFilter = cat;
   document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.cat === cat); });
   filterBooks();
 }
 
+/* ===== DATA LOADERS ===== */
 function loadVerse() {
   return apiCall('/verses/today').then(function(res) {
     if (res && res.verse) {
@@ -233,7 +254,6 @@ function loadVerse() {
     }
   });
 }
-
 function loadBlessing() {
   return apiCall('/blessings/today').then(function(res) {
     if (res && res.blessing) {
@@ -243,7 +263,6 @@ function loadBlessing() {
     }
   });
 }
-
 function loadPosts() {
   return apiCall('/posts/featured').then(function(res) {
     var posts = (res && res.data && res.data.data) ? res.data.data : [];
@@ -260,7 +279,6 @@ function loadPosts() {
     }
   });
 }
-
 function loadPrayers() {
   return apiCall('/prayer-requests/public').then(function(res) {
     var prayers = (res && res.data) ? res.data : [];
@@ -268,7 +286,6 @@ function loadPrayers() {
     document.getElementById('all-prayers').innerHTML = prayers.map(prayerCard).join('') || '<p class="loading">No prayer requests yet.</p>';
   });
 }
-
 function loadEvents() {
   return apiCall('/events/upcoming').then(function(res) {
     var events = (res && res.data) ? res.data : [];
@@ -276,7 +293,6 @@ function loadEvents() {
     document.getElementById('all-events').innerHTML = events.map(eventCard).join('') || '<p class="loading">No upcoming events.</p>';
   });
 }
-
 function loadBooks() {
   return apiCall('/books/featured').then(function(res) {
     allBooks = (res && res.data && res.data.data) ? res.data.data : [];
@@ -288,14 +304,12 @@ function loadBooks() {
     filterBooks();
   });
 }
-
 function loadStudies() {
   return apiCall('/bible-studies/featured').then(function(res) {
     var studies = (res && res.data && res.data.data) ? res.data.data : [];
     document.getElementById('all-studies').innerHTML = studies.map(studyCard).join('') || '<p class="loading">No active studies.</p>';
   });
 }
-
 function loadSermons() {
   return apiCall('/sermons/featured').then(function(res) {
     var sermons = (res && res.data && res.data.data) ? res.data.data : [];
@@ -308,7 +322,6 @@ function loadSermons() {
     }
   });
 }
-
 function loadReviews() {
   return apiCall('/reviews/approved').then(function(res) {
     var reviews = [];
@@ -325,12 +338,12 @@ function loadReviews() {
     document.getElementById('all-reviews').innerHTML = reviews.map(reviewCard).join('') || '<p class="loading">No reviews yet.</p>';
   });
 }
-
 function loadChurchSettings() {
   return apiCall('/settings').then(function(res) {
     churchSettings = (res && res.data) ? res.data : {};
     var name = churchSettings.church_name || document.getElementById('nav-church-name').textContent;
     document.getElementById('nav-church-name').textContent = name;
+    document.getElementById('mobile-brand-name').textContent = name;
     document.getElementById('footer-name').textContent = name;
     document.getElementById('footer-info').textContent = (churchSettings.address || '') + (churchSettings.phone ? ' \u2022 ' + churchSettings.phone : '');
     document.title = name;
@@ -353,7 +366,6 @@ function loadChurchSettings() {
       '</div></div>';
   });
 }
-
 function loadMinistries() {
   return apiCall('/ministries').then(function(res) {
     var list = (res && res.data && res.data.data) ? res.data.data : [];
@@ -367,14 +379,12 @@ function loadMinistries() {
     }).join('') || '<p class="loading">No ministries listed.</p>';
   });
 }
-
 function buildGiving() {
   var amounts = [10, 25, 50, 100, 250, 500];
   document.getElementById('giving-amounts').innerHTML = amounts.map(function(a) {
     return '<button class="giving-amount" onclick="selectGiving(' + a + ', this)">$' + a + '</button>';
   }).join('');
 }
-
 function selectGiving(amount, btn) {
   selectedGiving = amount;
   document.querySelectorAll('.giving-amount').forEach(function(b) { b.classList.remove('selected'); });
@@ -382,7 +392,30 @@ function selectGiving(amount, btn) {
   document.getElementById('custom-amount').value = '';
 }
 
-// INIT
+/* ===== PWA ===== */
+var deferredPrompt = null;
+function dismissPwaInstall() {
+  document.getElementById('pwa-install').classList.remove('show');
+  sessionStorage.setItem('pwa-dismissed', '1');
+}
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(e) { console.log('SW registration skipped:', e.message); });
+}
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  if (!sessionStorage.getItem('pwa-dismissed')) {
+    document.getElementById('pwa-install').classList.add('show');
+  }
+});
+document.getElementById('pwa-install-btn').addEventListener('click', function() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function() { deferredPrompt = null; dismissPwaInstall(); });
+  }
+});
+
+/* ===== INIT ===== */
 buildNav();
 buildStarInput();
 buildGiving();
@@ -390,7 +423,6 @@ Promise.allSettled([
   loadVerse(), loadBlessing(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()
 ]);
-
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
   m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
 });
