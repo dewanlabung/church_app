@@ -1,0 +1,397 @@
+<script>
+var API = '/api';
+var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','about'];
+var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',about:'About'};
+var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
+var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
+var currentPage = 'home';
+var prayedIds = {};
+var selectedRating = 0;
+var selectedGiving = null;
+var allBooks = [];
+var bookFilter = 'All';
+var churchSettings = {};
+
+function apiCall(path, opts) {
+  opts = opts || {};
+  return fetch(API + path, Object.assign({
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+    }
+  }, opts)).then(function(res) {
+    if (!res.ok && res.status === 404) return null;
+    return res.json();
+  }).catch(function(e) { console.error('API error:', path, e); return null; });
+}
+
+function buildNav() {
+  var nl = document.getElementById('nav-links');
+  var ml = document.getElementById('mobile-links');
+  nl.innerHTML = ''; ml.innerHTML = '';
+  PAGES.forEach(function(p) {
+    var cls = p === currentPage ? 'nav-link active' : 'nav-link';
+    nl.innerHTML += '<li><button class="' + cls + '" onclick="navigate(\'' + p + '\')">' + NAV_LABELS[p] + '</button></li>';
+    ml.innerHTML += '<button class="' + cls + '" onclick="navigate(\'' + p + '\')">' + NAV_LABELS[p] + '</button>';
+  });
+}
+
+function navigate(page) {
+  currentPage = page;
+  PAGES.forEach(function(p) {
+    document.getElementById('page-' + p).classList.toggle('active', p === page);
+  });
+  buildNav();
+  document.getElementById('mobile-menu').classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleMobile() { document.getElementById('mobile-menu').classList.toggle('open'); }
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+function openModal(type) { document.getElementById('modal-' + type).classList.add('open'); }
+function closeModal(type) { document.getElementById('modal-' + type).classList.remove('open'); }
+
+function renderStars(rating) { var m = 5; return '\u2605'.repeat(rating) + '\u2606'.repeat(m - rating); }
+
+function buildStarInput() {
+  var c = document.getElementById('star-input'); c.innerHTML = '';
+  for (var i = 1; i <= 5; i++) {
+    var b = document.createElement('button');
+    b.textContent = i <= selectedRating ? '\u2605' : '\u2606';
+    b.className = i <= selectedRating ? 'filled' : '';
+    b.setAttribute('data-val', i);
+    b.onclick = function() { selectedRating = parseInt(this.getAttribute('data-val')); buildStarInput(); };
+    c.appendChild(b);
+  }
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function esc(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function prayerCard(p) {
+  var prayed = prayedIds[p.id];
+  return '<div class="card"><div class="prayer-name">' + esc(p.name) + '</div>' +
+    (p.subject ? '<div style="font-size:0.85rem;color:var(--gold);margin-bottom:0.3rem;font-weight:600">' + esc(p.subject) + '</div>' : '') +
+    '<div class="prayer-text">' + esc(p.description) + '</div>' +
+    '<div class="prayer-footer"><span class="prayer-date">' + fmtDate(p.created_at) + '</span>' +
+    '<button class="pray-btn ' + (prayed ? 'prayed' : '') + '" onclick="doPray(' + p.id + ')">\uD83D\uDE4F ' + (p.prayer_count || 0) + ' ' + (prayed ? 'Prayed' : 'Pray') + '</button></div></div>';
+}
+
+function eventCard(e) {
+  return '<div class="card"><h3 class="card-title">' + esc(e.title) + '</h3>' +
+    '<p class="card-meta">\uD83D\uDCC5 ' + fmtDate(e.start_date) + (e.start_time ? ' \u2022 \u23F0 ' + e.start_time.slice(0,5) : '') + '</p>' +
+    (e.location ? '<p class="card-meta">\uD83D\uDCCD ' + esc(e.location) + '</p>' : '') +
+    '<p class="card-desc">' + esc(e.description || '') + '</p></div>';
+}
+
+function bookCard(b, i) {
+  return '<div class="book-card"><div class="book-cover">' + BOOK_ICONS[i % BOOK_ICONS.length] + '</div>' +
+    '<div class="book-info"><div class="book-title">' + esc(b.title) + '</div>' +
+    '<div class="book-author">' + esc(b.author) + '</div>' +
+    (b.category ? '<span class="book-category">' + esc(b.category) + '</span>' : '') +
+    (b.pages ? '<div class="card-desc">' + b.pages + ' pages</div>' : '') +
+    '<div class="book-actions"><button class="book-btn">\uD83D\uDCD6 Read</button>' +
+    (b.pdf_file ? '<button class="book-btn book-btn-pdf" onclick="downloadBook(' + b.id + ')">\uD83D\uDCE5 PDF</button>' : '') +
+    '</div></div></div>';
+}
+
+function studyCard(s) {
+  return '<div class="card"><span class="card-badge badge-study">' + esc(s.category || 'Study') + '</span>' +
+    '<h3 class="card-title">' + esc(s.title) + '</h3>' +
+    '<p class="card-desc">' + esc(s.description || '') + '</p>' +
+    '<div class="study-meta" style="margin-top:0.8rem">' +
+    (s.difficulty ? '<span>\uD83D\uDCCA ' + esc(s.difficulty) + '</span>' : '') +
+    (s.duration_minutes ? '<span>\u23F1 ' + s.duration_minutes + ' min</span>' : '') +
+    (s.author ? '<span>\uD83D\uDC64 ' + esc(s.author) + '</span>' : '') +
+    '</div>' +
+    (s.scripture_reference ? '<p class="card-meta" style="margin-top:0.4rem">\uD83D\uDCD6 ' + esc(s.scripture_reference) + '</p>' : '') +
+    '</div>';
+}
+
+function sermonCard(s) {
+  var playUrl = s.video_url || s.audio_url || '';
+  return '<div class="sermon-card" style="margin-bottom:1rem">' +
+    '<button class="sermon-play"' + (playUrl ? ' onclick="window.open(\'' + esc(playUrl) + '\')"' : '') + '>\u25B6</button>' +
+    '<div style="flex:1"><h3 class="card-title">' + esc(s.title) + '</h3>' +
+    '<p class="card-meta">' + esc(s.speaker) + ' \u2022 ' + fmtDate(s.sermon_date) + (s.duration ? ' \u2022 ' + s.duration : '') + '</p>' +
+    '<p class="card-desc">' + esc(s.description || '') + '</p>' +
+    (s.series ? '<span class="card-badge badge-worship" style="margin-top:0.4rem">' + esc(s.series) + '</span>' : '') +
+    '</div></div>';
+}
+
+function reviewCard(r) {
+  return '<div class="card"><div class="review-stars">' + renderStars(r.rating) + '</div>' +
+    (r.title ? '<div class="card-title" style="font-size:0.95rem;margin-bottom:0.3rem">' + esc(r.title) + '</div>' : '') +
+    '<div class="review-text">\u201C' + esc(r.content) + '\u201D</div>' +
+    '<div class="review-author">\u2014 ' + esc(r.name) + ' \u2022 ' + fmtDate(r.created_at) + '</div></div>';
+}
+
+function doPray(id) {
+  if (prayedIds[id]) return;
+  apiCall('/prayer-requests/' + id + '/pray', { method: 'POST' }).then(function(res) {
+    if (res) { prayedIds[id] = true; showToast('\uD83D\uDE4F Thank you for praying.'); loadPrayers(); }
+  });
+}
+
+function submitPrayer() {
+  var name = document.getElementById('prayer-name').value;
+  var subject = document.getElementById('prayer-subject').value;
+  var desc = document.getElementById('prayer-request').value;
+  var isAnon = document.getElementById('prayer-anon').checked;
+  var isPublic = document.getElementById('prayer-public').checked;
+  if (!subject.trim() || !desc.trim()) { showToast('Please enter a subject and prayer request.'); return; }
+  apiCall('/prayer-requests', {
+    method: 'POST',
+    body: JSON.stringify({ name: isAnon ? 'Anonymous' : (name || 'Church Member'), subject: subject, description: desc, is_public: isPublic })
+  }).then(function(res) {
+    if (res) {
+      closeModal('prayer');
+      document.getElementById('prayer-name').value = '';
+      document.getElementById('prayer-subject').value = '';
+      document.getElementById('prayer-request').value = '';
+      document.getElementById('prayer-anon').checked = false;
+      document.getElementById('prayer-public').checked = true;
+      showToast('\uD83D\uDE4F Prayer request submitted. We\'re praying with you.');
+      loadPrayers();
+    }
+  });
+}
+
+function submitReview() {
+  var name = document.getElementById('review-name').value;
+  var email = document.getElementById('review-email').value;
+  var title = document.getElementById('review-title').value;
+  var text = document.getElementById('review-text').value;
+  if (!name.trim() || !email.trim() || !title.trim() || !text.trim() || !selectedRating) { showToast('Please fill in all fields and add a rating.'); return; }
+  apiCall('/reviews', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, email: email, rating: selectedRating, title: title, content: text })
+  }).then(function(res) {
+    if (res) {
+      closeModal('review');
+      document.getElementById('review-name').value = '';
+      document.getElementById('review-email').value = '';
+      document.getElementById('review-title').value = '';
+      document.getElementById('review-text').value = '';
+      selectedRating = 0; buildStarInput();
+      showToast('\u2B50 Thank you for your review! It will appear once approved.');
+      loadReviews();
+    }
+  });
+}
+
+function submitDonation() {
+  var custom = document.getElementById('custom-amount').value;
+  var amount = custom ? parseFloat(custom) : selectedGiving;
+  if (!amount || amount < 1) { showToast('Please select or enter an amount.'); return; }
+  showToast('\uD83D\uDC9B Thank you for your generous gift of $' + amount + '! (Payment integration coming soon)');
+}
+
+function downloadBook(id) {
+  apiCall('/books/' + id + '/download').then(function(res) {
+    if (res && res.success && res.data && res.data.download_url) { window.open(res.data.download_url); }
+    else { showToast('PDF not available for this book.'); }
+  });
+}
+
+function filterBooks() {
+  var search = document.getElementById('book-search').value.toLowerCase();
+  var filtered = allBooks.filter(function(b) {
+    var matchCat = bookFilter === 'All' || b.category === bookFilter;
+    var matchSearch = !search || b.title.toLowerCase().indexOf(search) !== -1 || (b.author && b.author.toLowerCase().indexOf(search) !== -1);
+    return matchCat && matchSearch;
+  });
+  document.getElementById('all-books').innerHTML = filtered.map(function(b, i) { return bookCard(b, i); }).join('') || '<p style="color:var(--text-muted)">No books found.</p>';
+}
+
+function setBookFilter(cat) {
+  bookFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.cat === cat); });
+  filterBooks();
+}
+
+function loadVerse() {
+  return apiCall('/verses/today').then(function(res) {
+    if (res && res.verse) {
+      document.getElementById('verse-text').textContent = '\u201C' + res.verse.verse_text + '\u201D';
+      document.getElementById('verse-ref').textContent = '\u2014 ' + res.verse.reference;
+    } else {
+      document.getElementById('verse-text').textContent = '\u201CFor God so loved the world, that he gave his only Son, that whoever believes in him should not perish but have eternal life.\u201D';
+      document.getElementById('verse-ref').textContent = '\u2014 John 3:16';
+    }
+  });
+}
+
+function loadBlessing() {
+  return apiCall('/blessings/today').then(function(res) {
+    if (res && res.blessing) {
+      document.getElementById('blessing-title').textContent = res.blessing.title;
+      document.getElementById('blessing-text').textContent = res.blessing.content;
+      document.getElementById('blessing-author').textContent = res.blessing.author ? '\u2014 ' + res.blessing.author : '';
+    }
+  });
+}
+
+function loadPosts() {
+  return apiCall('/posts/featured').then(function(res) {
+    var posts = (res && res.data && res.data.data) ? res.data.data : [];
+    if (posts.length > 0) {
+      document.getElementById('ticker-text').textContent = posts.map(function(p) { return '\uD83D\uDCE2 ' + p.title + (p.excerpt ? ': ' + p.excerpt : ''); }).join('   \u2022   ');
+      document.getElementById('home-posts').innerHTML =
+        '<div class="section-header"><h2 class="section-title">\uD83D\uDCF0 Latest News</h2></div>' +
+        '<div class="cards-grid">' + posts.slice(0, 3).map(function(p) {
+          return '<div class="card"><span class="card-badge badge-worship">' + esc(p.category || 'News') + '</span>' +
+            '<h3 class="card-title">' + esc(p.title) + '</h3>' +
+            '<p class="card-desc">' + esc(p.excerpt || '') + '</p>' +
+            '<p class="card-meta" style="margin-top:0.4rem">' + fmtDate(p.published_at) + (p.author_name ? ' \u2022 ' + esc(p.author_name) : '') + '</p></div>';
+        }).join('') + '</div>';
+    }
+  });
+}
+
+function loadPrayers() {
+  return apiCall('/prayer-requests/public').then(function(res) {
+    var prayers = (res && res.data) ? res.data : [];
+    document.getElementById('home-prayers').innerHTML = prayers.slice(0, 3).map(prayerCard).join('') || '<p class="loading">No prayer requests yet.</p>';
+    document.getElementById('all-prayers').innerHTML = prayers.map(prayerCard).join('') || '<p class="loading">No prayer requests yet.</p>';
+  });
+}
+
+function loadEvents() {
+  return apiCall('/events/upcoming').then(function(res) {
+    var events = (res && res.data) ? res.data : [];
+    document.getElementById('home-events').innerHTML = events.slice(0, 3).map(eventCard).join('') || '<p class="loading">No upcoming events.</p>';
+    document.getElementById('all-events').innerHTML = events.map(eventCard).join('') || '<p class="loading">No upcoming events.</p>';
+  });
+}
+
+function loadBooks() {
+  return apiCall('/books/featured').then(function(res) {
+    allBooks = (res && res.data && res.data.data) ? res.data.data : [];
+    var cats = ['All'];
+    allBooks.forEach(function(b) { if (b.category && cats.indexOf(b.category) === -1) cats.push(b.category); });
+    document.getElementById('book-filters').innerHTML = cats.map(function(c) {
+      return '<button class="filter-btn ' + (c === bookFilter ? 'active' : '') + '" data-cat="' + c + '" onclick="setBookFilter(\'' + c + '\')">' + c + '</button>';
+    }).join('');
+    filterBooks();
+  });
+}
+
+function loadStudies() {
+  return apiCall('/bible-studies/featured').then(function(res) {
+    var studies = (res && res.data && res.data.data) ? res.data.data : [];
+    document.getElementById('all-studies').innerHTML = studies.map(studyCard).join('') || '<p class="loading">No active studies.</p>';
+  });
+}
+
+function loadSermons() {
+  return apiCall('/sermons/featured').then(function(res) {
+    var sermons = (res && res.data && res.data.data) ? res.data.data : [];
+    document.getElementById('all-sermons').innerHTML = sermons.map(sermonCard).join('') || '<p class="loading">No sermons yet.</p>';
+    if (sermons.length > 0) {
+      document.getElementById('home-sermon').innerHTML =
+        '<div class="section-header"><h2 class="section-title">\uD83C\uDF99\uFE0F Latest Sermon</h2>' +
+        '<button class="section-action" onclick="navigate(\'sermons\')">All Sermons</button></div>' +
+        sermonCard(sermons[0]);
+    }
+  });
+}
+
+function loadReviews() {
+  return apiCall('/reviews/approved').then(function(res) {
+    var reviews = [];
+    if (res && res.data) {
+      reviews = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
+    var total = reviews.length;
+    var sum = 0;
+    reviews.forEach(function(r) { sum += (r.rating || 0); });
+    var avg = total > 0 ? (sum / total).toFixed(1) : '0';
+    document.getElementById('avg-rating').textContent = avg;
+    document.getElementById('avg-stars').innerHTML = '<span class="review-stars">' + renderStars(Math.round(parseFloat(avg))) + '</span>';
+    document.getElementById('total-reviews').textContent = total + ' reviews';
+    document.getElementById('all-reviews').innerHTML = reviews.map(reviewCard).join('') || '<p class="loading">No reviews yet.</p>';
+  });
+}
+
+function loadChurchSettings() {
+  return apiCall('/settings').then(function(res) {
+    churchSettings = (res && res.data) ? res.data : {};
+    var name = churchSettings.church_name || document.getElementById('nav-church-name').textContent;
+    document.getElementById('nav-church-name').textContent = name;
+    document.getElementById('footer-name').textContent = name;
+    document.getElementById('footer-info').textContent = (churchSettings.address || '') + (churchSettings.phone ? ' \u2022 ' + churchSettings.phone : '');
+    document.title = name;
+    document.getElementById('about-hero').innerHTML =
+      '<h2 class="blessing-title" style="font-size:1.8rem">' + esc(name) + '</h2>' +
+      (churchSettings.tagline ? '<p style="color:var(--gold);font-style:italic;margin-bottom:0.5rem">' + esc(churchSettings.tagline) + '</p>' : '') +
+      '<p class="blessing-text" style="font-size:1.05rem">' + esc(churchSettings.mission_statement || churchSettings.description || '') + '</p>';
+    document.getElementById('about-info').innerHTML =
+      '<div class="info-card"><h3 class="info-card-title">\u26EA Service Times</h3><div class="info-card-text">' + esc(churchSettings.service_times || '') + '</div></div>' +
+      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDCCD Location</h3><p class="info-card-text">' + esc(churchSettings.address || '') + '</p>' +
+      (churchSettings.city ? '<p class="info-card-text">' + esc(churchSettings.city) + (churchSettings.state ? ', ' + esc(churchSettings.state) : '') + (churchSettings.zip_code ? ' ' + esc(churchSettings.zip_code) : '') + '</p>' : '') +
+      '<p class="info-card-text" style="margin-top:0.4rem">\uD83D\uDCDE ' + esc(churchSettings.phone || '') + '</p><p class="info-card-text">\u2709\uFE0F ' + esc(churchSettings.email || '') + '</p></div>' +
+      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDC64 Leadership</h3><p class="info-card-text">Lead Pastor: ' + esc(churchSettings.pastor_name || '') + '</p>' +
+      (churchSettings.pastor_title ? '<p class="info-card-text">' + esc(churchSettings.pastor_title) + '</p>' : '') + '</div>' +
+      '<div class="info-card"><h3 class="info-card-title">\uD83C\uDF10 Connect Online</h3><p class="info-card-text">Follow us on social media and stay connected.</p><div class="social-links">' +
+      (churchSettings.facebook_url ? '<a class="social-link" href="' + esc(churchSettings.facebook_url) + '" target="_blank">Facebook</a>' : '') +
+      (churchSettings.youtube_url ? '<a class="social-link" href="' + esc(churchSettings.youtube_url) + '" target="_blank">YouTube</a>' : '') +
+      (churchSettings.instagram_url ? '<a class="social-link" href="' + esc(churchSettings.instagram_url) + '" target="_blank">Instagram</a>' : '') +
+      (churchSettings.twitter_url ? '<a class="social-link" href="' + esc(churchSettings.twitter_url) + '" target="_blank">Twitter</a>' : '') +
+      '</div></div>';
+  });
+}
+
+function loadMinistries() {
+  return apiCall('/ministries').then(function(res) {
+    var list = (res && res.data && res.data.data) ? res.data.data : [];
+    document.getElementById('all-ministries').innerHTML = list.map(function(m, i) {
+      return '<div class="volunteer-card" onclick="showToast(\'\uD83D\uDCCB Contact ' + esc(m.leader_name || 'the church') + ' to join ' + esc(m.name) + '!\')">' +
+        '<div class="volunteer-icon">' + MINISTRY_ICONS[i % MINISTRY_ICONS.length] + '</div>' +
+        '<div class="volunteer-name">' + esc(m.name) + '</div>' +
+        (m.category ? '<div class="volunteer-spots">' + esc(m.category) + '</div>' : '') +
+        (m.meeting_schedule ? '<div class="volunteer-spots">' + esc(m.meeting_schedule) + '</div>' : '') +
+        '</div>';
+    }).join('') || '<p class="loading">No ministries listed.</p>';
+  });
+}
+
+function buildGiving() {
+  var amounts = [10, 25, 50, 100, 250, 500];
+  document.getElementById('giving-amounts').innerHTML = amounts.map(function(a) {
+    return '<button class="giving-amount" onclick="selectGiving(' + a + ', this)">$' + a + '</button>';
+  }).join('');
+}
+
+function selectGiving(amount, btn) {
+  selectedGiving = amount;
+  document.querySelectorAll('.giving-amount').forEach(function(b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('custom-amount').value = '';
+}
+
+// INIT
+buildNav();
+buildStarInput();
+buildGiving();
+Promise.allSettled([
+  loadVerse(), loadBlessing(), loadPosts(), loadPrayers(), loadEvents(),
+  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()
+]);
+
+document.querySelectorAll('.modal-overlay').forEach(function(m) {
+  m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
+});
+</script>
