@@ -63,6 +63,12 @@
 
                 <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Content</p>
 
+                <a href="{{ route('admin.manage', 'announcements') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/announcements') ? 'active' : '' }}">
+                    <i class="fas fa-bullhorn w-5 mr-3 text-center text-indigo-300"></i>
+                    Announcements
+                </a>
+
                 <a href="{{ route('admin.manage', 'verses') }}"
                    class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/verses') ? 'active' : '' }}">
                     <i class="fas fa-book-bible w-5 mr-3 text-center text-indigo-300"></i>
@@ -149,12 +155,38 @@
                     Donations
                 </a>
 
+                <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">CMS</p>
+
+                <a href="{{ route('admin.manage', 'pages') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/pages') ? 'active' : '' }}">
+                    <i class="fas fa-file-alt w-5 mr-3 text-center text-indigo-300"></i>
+                    Pages
+                </a>
+
+                <a href="{{ route('admin.manage', 'categories') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/categories') ? 'active' : '' }}">
+                    <i class="fas fa-tags w-5 mr-3 text-center text-indigo-300"></i>
+                    Categories
+                </a>
+
+                <a href="{{ route('admin.manage', 'menus') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/menus') ? 'active' : '' }}">
+                    <i class="fas fa-bars w-5 mr-3 text-center text-indigo-300"></i>
+                    Menus
+                </a>
+
                 <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">System</p>
 
                 <a href="{{ route('admin.manage', 'users') }}"
                    class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/users') ? 'active' : '' }}">
                     <i class="fas fa-users w-5 mr-3 text-center text-indigo-300"></i>
                     Users
+                </a>
+
+                <a href="{{ route('admin.manage', 'roles') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/roles') ? 'active' : '' }}">
+                    <i class="fas fa-user-shield w-5 mr-3 text-center text-indigo-300"></i>
+                    Roles
                 </a>
 
                 <a href="{{ route('admin.manage', 'settings') }}"

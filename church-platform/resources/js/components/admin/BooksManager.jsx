@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, post, put, del, upload } from '../shared/api';
+import { get, post, put, del, upload, extractPaginatedData } from '../shared/api';
 
 export default function BooksManager() {
     const [items, setItems] = useState([]);
@@ -17,8 +17,9 @@ export default function BooksManager() {
     const fetchItems = async (page = 1) => {
         try {
             const data = await get(`/api/books?page=${page}`);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) {
             setAlert({ type: 'error', message: e.message });
         }

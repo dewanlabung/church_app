@@ -57,9 +57,10 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/manage/{section}', function ($section) {
         $validSections = [
-            'verses', 'blessings', 'prayers', 'events', 'posts', 'sermons',
+            'verses', 'blessings', 'prayers', 'prayer-requests', 'events', 'posts', 'sermons',
             'books', 'bible-studies', 'reviews', 'galleries', 'ministries',
             'contacts', 'newsletter', 'donations', 'users', 'settings',
+            'announcements', 'pages', 'categories', 'menus', 'roles',
         ];
         if (!in_array($section, $validSections)) {
             abort(404);
@@ -67,6 +68,9 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         return view('admin.manage', ['section' => $section]);
     })->name('admin.manage');
 });
+
+// Sitemap (SEO)
+Route::get('/sitemap.xml', [\App\Http\Controllers\Api\SitemapController::class, 'index'])->name('sitemap');
 
 // Frontend catch-all (SPA)
 Route::get('/{any?}', function () {

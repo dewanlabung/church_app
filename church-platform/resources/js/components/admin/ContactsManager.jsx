@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, post, put, del } from '../shared/api';
+import { get, post, put, del, patch, extractPaginatedData } from '../shared/api';
 
 export default function ContactsManager() {
     const [items, setItems] = useState([]);
@@ -17,8 +17,9 @@ export default function ContactsManager() {
         setLoading(true);
         try {
             const data = await get(`/api/contacts?page=${page}`);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) {
             setAlert({ type: 'error', message: e.message });
         }
@@ -33,7 +34,7 @@ export default function ContactsManager() {
 
     const handleMarkRead = async (item) => {
         try {
-            await put(`/api/contacts/${item.id}/read`, {});
+            await patch(`/api/contacts/${item.id}/read`, {});
             setAlert({ type: 'success', message: 'Contact marked as read.' });
             fetchItems();
         } catch (e) {

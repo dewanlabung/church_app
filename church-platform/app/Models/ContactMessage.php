@@ -6,9 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class ContactMessage extends Model
 {
-    protected $fillable = ['name', 'email', 'phone', 'subject', 'message', 'is_read', 'admin_reply', 'replied_at'];
+    protected $fillable = [
+        'name', 'email', 'phone', 'subject', 'message',
+        'is_read', 'read_at', 'admin_reply', 'reply_message', 'replied_at',
+    ];
 
-    protected $casts = ['is_read' => 'boolean', 'replied_at' => 'datetime'];
+    protected $casts = [
+        'is_read' => 'boolean',
+        'read_at' => 'datetime',
+        'replied_at' => 'datetime',
+    ];
 
     public function scopeUnread($query) { return $query->where('is_read', false); }
 }

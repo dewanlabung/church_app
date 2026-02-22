@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, del, upload } from '../shared/api';
+import { get, del, upload, extractPaginatedData } from '../shared/api';
 
 export default function SermonsManager() {
     const [items, setItems] = useState([]);
@@ -20,8 +20,9 @@ export default function SermonsManager() {
         setLoading(true);
         try {
             const data = await get(`/api/sermons?page=${page}`);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) { setAlert({ type: 'error', message: e.message }); }
         setLoading(false);
     };

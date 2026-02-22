@@ -32,5 +32,24 @@ export async function api(url, options = {}) {
 export const get = (url) => api(url);
 export const post = (url, body) => api(url, { method: 'POST', body });
 export const put = (url, body) => api(url, { method: 'PUT', body });
+export const patch = (url, body) => api(url, { method: 'PATCH', body });
 export const del = (url) => api(url, { method: 'DELETE' });
 export const upload = (url, formData, method = 'POST') => api(url, { method, body: formData });
+
+// Helper to extract paginated data from API responses
+// Handles both { data: [...], meta } and { success: true, data: { data: [...], meta } }
+export function extractPaginatedData(response) {
+    if (response && response.success && response.data) {
+        // Wrapped format: { success: true, data: paginator }
+        const paginator = response.data;
+        return {
+            items: paginator.data || [],
+            meta: paginator,
+        };
+    }
+    // Direct paginator format: { data: [...], current_page, ... }
+    return {
+        items: response?.data || [],
+        meta: response,
+    };
+}

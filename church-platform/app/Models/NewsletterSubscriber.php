@@ -7,15 +7,21 @@ use Illuminate\Support\Str;
 
 class NewsletterSubscriber extends Model
 {
-    protected $fillable = ['email', 'name', 'is_active', 'token'];
+    protected $fillable = ['email', 'name', 'is_active', 'token', 'subscribed_at', 'unsubscribed_at'];
 
-    protected $casts = ['is_active' => 'boolean'];
+    protected $casts = [
+        'is_active' => 'boolean',
+        'subscribed_at' => 'datetime',
+        'unsubscribed_at' => 'datetime',
+    ];
 
     protected static function boot()
     {
         parent::boot();
         static::creating(function ($subscriber) {
-            $subscriber->token = Str::random(32);
+            if (!$subscriber->token) {
+                $subscriber->token = Str::random(64);
+            }
         });
     }
 

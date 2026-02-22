@@ -1,19 +1,25 @@
 <?php
 
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\BibleStudyController;
 use App\Http\Controllers\Api\BlessingController;
 use App\Http\Controllers\Api\BookController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\ContactController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EventController;
 use App\Http\Controllers\Api\GalleryController;
+use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\MinistryController;
 use App\Http\Controllers\Api\NewsletterController;
+use App\Http\Controllers\Api\PageController;
 use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\Api\PrayerRequestController;
 use App\Http\Controllers\Api\ReviewController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SermonController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\SitemapController;
 use App\Http\Controllers\Api\VerseController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +55,22 @@ Route::get('/ministries', [MinistryController::class, 'index']);
 Route::get('/ministries/{ministry}', [MinistryController::class, 'show']);
 Route::get('/prayer-requests/public', [PrayerRequestController::class, 'publicRequests']);
 Route::get('/settings', [SettingController::class, 'show']);
+
+// Announcements (public)
+Route::get('/announcements/active', [AnnouncementController::class, 'active']);
+
+// Pages (public)
+Route::get('/pages/published', [PageController::class, 'published']);
+Route::get('/pages/{slug}', [PageController::class, 'show']);
+
+// Categories (public)
+Route::get('/categories', [CategoryController::class, 'all']);
+
+// Menus (public)
+Route::get('/menus/{location}', [MenuController::class, 'show']);
+
+// Sitemap
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
 
 // Public Submissions
 Route::post('/contact', [ContactController::class, 'store']);
@@ -144,6 +166,37 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Newsletter Admin
     Route::get('/newsletter/subscribers', [NewsletterController::class, 'subscribers']);
+
+    // Announcements CRUD
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::post('/announcements', [AnnouncementController::class, 'store']);
+    Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update']);
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy']);
+
+    // Pages CRUD
+    Route::get('/pages', [PageController::class, 'index']);
+    Route::post('/pages', [PageController::class, 'store']);
+    Route::put('/pages/{page}', [PageController::class, 'update']);
+    Route::delete('/pages/{page}', [PageController::class, 'destroy']);
+
+    // Categories CRUD
+    Route::get('/categories/admin', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+    // Menus CRUD
+    Route::get('/menus', [MenuController::class, 'index']);
+    Route::post('/menus', [MenuController::class, 'store']);
+    Route::put('/menus/{menu}', [MenuController::class, 'update']);
+    Route::delete('/menus/{menu}', [MenuController::class, 'destroy']);
+
+    // Roles CRUD
+    Route::get('/roles', [RoleController::class, 'index']);
+    Route::post('/roles', [RoleController::class, 'store']);
+    Route::put('/roles/{role}', [RoleController::class, 'update']);
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
+    Route::post('/roles/assign', [RoleController::class, 'assignRole']);
 
     // Settings
     Route::put('/settings', [SettingController::class, 'update']);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, post, put, del, api } from '../shared/api';
+import { get, post, put, patch, del, extractPaginatedData } from '../shared/api';
 
 export default function PrayersManager() {
     const [items, setItems] = useState([]);
@@ -18,8 +18,9 @@ export default function PrayersManager() {
         setLoading(true);
         try {
             const data = await get(`/api/prayer-requests?page=${page}`);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) { setAlert({ type: 'error', message: e.message }); }
         setLoading(false);
     };
@@ -77,10 +78,7 @@ export default function PrayersManager() {
 
     const updateStatus = async (item, status) => {
         try {
-            await api(`/api/prayer-requests/${item.id}/status`, {
-                method: 'PATCH',
-                body: { status },
-            });
+            await patch(`/api/prayer-requests/${item.id}/status`, { status });
             setAlert({ type: 'success', message: `Prayer request ${status}.` });
             fetchItems();
         } catch (e) { setAlert({ type: 'error', message: e.message }); }

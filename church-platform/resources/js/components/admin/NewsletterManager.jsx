@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, post, put, del } from '../shared/api';
+import { get, post, put, del, extractPaginatedData } from '../shared/api';
 
 export default function NewsletterManager() {
     const [items, setItems] = useState([]);
@@ -18,8 +18,9 @@ export default function NewsletterManager() {
                 url += `&search=${encodeURIComponent(query)}`;
             }
             const data = await get(url);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) {
             setAlert({ type: 'error', message: e.message });
         }

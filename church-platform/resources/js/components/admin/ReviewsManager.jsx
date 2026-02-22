@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, DataTable, Pagination, FormField, Alert } from '../shared/CrudPanel';
-import { get, post, put, del, upload } from '../shared/api';
+import { get, post, put, del, upload, patch, extractPaginatedData } from '../shared/api';
 
 export default function ReviewsManager() {
     const [items, setItems] = useState([]);
@@ -10,8 +10,9 @@ export default function ReviewsManager() {
     const fetchItems = async (page = 1) => {
         try {
             const data = await get(`/api/reviews?page=${page}`);
-            setItems(data.data || []);
-            setMeta(data);
+            const { items, meta } = extractPaginatedData(data);
+            setItems(items);
+            setMeta(meta);
         } catch (e) {
             setAlert({ type: 'error', message: e.message });
         }
@@ -21,7 +22,7 @@ export default function ReviewsManager() {
 
     const handleApprove = async (item) => {
         try {
-            await put(`/api/reviews/${item.id}/approve`, {});
+            await patch(`/api/reviews/${item.id}/approve`, {});
             setAlert({ type: 'success', message: `Review ${item.is_approved ? 'unapproved' : 'approved'} successfully.` });
             fetchItems();
         } catch (e) {
@@ -31,7 +32,7 @@ export default function ReviewsManager() {
 
     const handleToggleFeatured = async (item) => {
         try {
-            await put(`/api/reviews/${item.id}/toggle-featured`, {});
+            await patch(`/api/reviews/${item.id}/toggle-featured`, {});
             setAlert({ type: 'success', message: `Review ${item.is_featured ? 'unfeatured' : 'featured'} successfully.` });
             fetchItems();
         } catch (e) {

@@ -15,11 +15,17 @@ import NewsletterManager from './admin/NewsletterManager';
 import DonationsManager from './admin/DonationsManager';
 import UsersManager from './admin/UsersManager';
 import SettingsManager from './admin/SettingsManager';
+import AnnouncementsManager from './admin/AnnouncementsManager';
+import PagesManager from './admin/PagesManager';
+import CategoriesManager from './admin/CategoriesManager';
+import MenuManager from './admin/MenuManager';
+import RolesManager from './admin/RolesManager';
 
 const components = {
     'verses': VersesManager,
     'blessings': BlessingsManager,
     'prayers': PrayersManager,
+    'prayer-requests': PrayersManager,
     'events': EventsManager,
     'posts': PostsManager,
     'sermons': SermonsManager,
@@ -33,6 +39,11 @@ const components = {
     'donations': DonationsManager,
     'users': UsersManager,
     'settings': SettingsManager,
+    'announcements': AnnouncementsManager,
+    'pages': PagesManager,
+    'categories': CategoriesManager,
+    'menus': MenuManager,
+    'roles': RolesManager,
 };
 
 export default function AdminApp({ section }) {

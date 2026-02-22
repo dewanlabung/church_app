@@ -7,14 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 class Sermon extends Model
 {
     protected $fillable = [
-        'title', 'slug', 'description', 'content', 'speaker', 'image',
+        'title', 'slug', 'description', 'content', 'speaker', 'image', 'thumbnail',
         'video_url', 'audio_url', 'pdf_notes', 'scripture_reference',
-        'series', 'category', 'sermon_date', 'duration_minutes',
-        'view_count', 'is_featured', 'is_active', 'meta_title', 'meta_description', 'author_id'
+        'series', 'category', 'sermon_date', 'duration_minutes', 'duration',
+        'view_count', 'is_featured', 'is_active', 'is_published', 'tags',
+        'meta_title', 'meta_description', 'author_id',
     ];
 
     protected $casts = [
-        'sermon_date' => 'date', 'is_featured' => 'boolean', 'is_active' => 'boolean'
+        'sermon_date' => 'date',
+        'is_featured' => 'boolean',
+        'is_active' => 'boolean',
+        'is_published' => 'boolean',
     ];
 
     public function author() { return $this->belongsTo(User::class, 'author_id'); }

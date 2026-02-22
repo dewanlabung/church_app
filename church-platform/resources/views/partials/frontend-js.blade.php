@@ -243,6 +243,16 @@ function setBookFilter(cat) {
 }
 
 /* ===== DATA LOADERS ===== */
+function loadAnnouncements() {
+  return apiCall('/announcements/active').then(function(res) {
+    var items = (res && res.data) ? res.data : [];
+    if (items.length > 0) {
+      document.getElementById('ticker-text').textContent = items.map(function(a) {
+        return '\uD83D\uDCE2 ' + a.title + (a.content ? ': ' + a.content : '');
+      }).join('   \u2022   ');
+    }
+  });
+}
 function loadVerse() {
   return apiCall('/verses/today').then(function(res) {
     if (res && res.verse) {
@@ -426,7 +436,7 @@ buildNav();
 buildStarInput();
 buildGiving();
 Promise.allSettled([
-  loadVerse(), loadBlessing(), loadPosts(), loadPrayers(), loadEvents(),
+  loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()
 ]);
 document.querySelectorAll('.modal-overlay').forEach(function(m) {

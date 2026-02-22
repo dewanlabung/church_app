@@ -8,11 +8,22 @@ class Book extends Model
 {
     protected $fillable = [
         'title', 'slug', 'author', 'description', 'cover_image', 'pdf_file',
-        'category', 'isbn', 'pages', 'published_year', 'download_count',
-        'view_count', 'is_featured', 'is_active', 'meta_title', 'meta_description', 'uploaded_by'
+        'category', 'isbn', 'publisher', 'pages', 'published_year',
+        'download_count', 'view_count', 'is_featured', 'is_active', 'is_free', 'is_published',
+        'tags', 'meta_title', 'meta_description', 'uploaded_by',
     ];
 
-    protected $casts = ['is_featured' => 'boolean', 'is_active' => 'boolean'];
+    protected $casts = [
+        'is_featured' => 'boolean',
+        'is_active' => 'boolean',
+        'is_free' => 'boolean',
+        'is_published' => 'boolean',
+    ];
+
+    public function setPublishYearAttribute($value)
+    {
+        $this->attributes['published_year'] = $value;
+    }
 
     public function uploader() { return $this->belongsTo(User::class, 'uploaded_by'); }
 
