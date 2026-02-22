@@ -148,12 +148,25 @@ class InstallerController extends Controller
     public function install(Request $request)
     {
         try {
-            // Generate app key
-            Artisan::call('key:generate', ['--force' => true]);
-            
-            // Run migrations
+            // Generate app key if not set
+            if (empty(config('app.key')) || config('app.key') === 'base64:') {
+                Artisan::call('key:generate', ['--force' => true]);
+            }
+
+            // Drop all existing tables and run fresh migrations
+            // This ensures a clean install even if the database had previous tables
+            $tables = DB::select('SHOW TABLES');
+            $dbName = config('database.connections.mysql.database', env('DB_DATABASE'));
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+            foreach ($tables as $table) {
+                $tableName = $table->{'Tables_in_' . $dbName} ?? reset((array) $table);
+                DB::statement("DROP TABLE IF EXISTS `{$tableName}`");
+            }
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            // Run migrations on clean database
             Artisan::call('migrate', ['--force' => true]);
-            
+
             // Create admin user
             $user = User::create([
                 'name' => session('admin_name'),
@@ -162,7 +175,7 @@ class InstallerController extends Controller
                 'is_admin' => true,
                 'email_verified_at' => now(),
             ]);
-            
+
             // Create settings
             Setting::create([
                 'church_name' => session('church_name', 'My Church'),
@@ -174,18 +187,22 @@ class InstallerController extends Controller
                 'youtube_url' => session('youtube_url'),
                 'instagram_url' => session('instagram_url'),
             ]);
-            
-            // Create storage link
-            Artisan::call('storage:link');
-            
+
+            // Create storage link (ignore if already exists)
+            try {
+                Artisan::call('storage:link');
+            } catch (\Exception $e) {
+                // Storage link may already exist on shared hosting
+            }
+
             // Mark as installed
             File::put(storage_path('installed'), 'Installed on: ' . now());
-            
+
             // Clear session data
             session()->forget(['db_configured', 'admin_name', 'admin_email', 'admin_password', 'church_name', 'church_address', 'church_phone', 'church_email', 'church_description', 'facebook_url', 'youtube_url', 'instagram_url']);
-            
+
             return response()->json(['success' => true, 'message' => 'Installation completed successfully!']);
-            
+
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Installation failed: ' . $e->getMessage()], 500);
         }

@@ -8,16 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Skip if columns already exist (they are included in the main settings migration)
+        if (Schema::hasColumn('settings', 'theme_config')) {
+            return;
+        }
+
         Schema::table('settings', function (Blueprint $table) {
-            $table->json('theme_config')->nullable()->after('secondary_color');
-            $table->json('widget_config')->nullable()->after('theme_config');
+            $table->json('theme_config')->nullable();
+            $table->json('widget_config')->nullable();
         });
     }
 
     public function down(): void
     {
         Schema::table('settings', function (Blueprint $table) {
-            $table->dropColumn(['theme_config', 'widget_config']);
+            if (Schema::hasColumn('settings', 'theme_config')) {
+                $table->dropColumn(['theme_config', 'widget_config']);
+            }
         });
     }
 };

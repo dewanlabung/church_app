@@ -341,28 +341,34 @@ function loadReviews() {
 function loadChurchSettings() {
   return apiCall('/settings').then(function(res) {
     churchSettings = (res && res.data) ? res.data : {};
-    var name = churchSettings.church_name || document.getElementById('nav-church-name').textContent;
+    // Support both column naming conventions (church_address vs address)
+    var s = churchSettings;
+    var name = s.church_name || document.getElementById('nav-church-name').textContent;
+    var addr = s.address || s.church_address || '';
+    var phone = s.phone || s.church_phone || '';
+    var email = s.email || s.church_email || '';
+    var desc = s.mission_statement || s.description || s.church_description || '';
     document.getElementById('nav-church-name').textContent = name;
     document.getElementById('mobile-brand-name').textContent = name;
     document.getElementById('footer-name').textContent = name;
-    document.getElementById('footer-info').textContent = (churchSettings.address || '') + (churchSettings.phone ? ' \u2022 ' + churchSettings.phone : '');
+    document.getElementById('footer-info').textContent = addr + (phone ? ' \u2022 ' + phone : '');
     document.title = name;
     document.getElementById('about-hero').innerHTML =
       '<h2 class="blessing-title" style="font-size:1.8rem">' + esc(name) + '</h2>' +
-      (churchSettings.tagline ? '<p style="color:var(--gold);font-style:italic;margin-bottom:0.5rem">' + esc(churchSettings.tagline) + '</p>' : '') +
-      '<p class="blessing-text" style="font-size:1.05rem">' + esc(churchSettings.mission_statement || churchSettings.description || '') + '</p>';
+      (s.tagline ? '<p style="color:var(--gold);font-style:italic;margin-bottom:0.5rem">' + esc(s.tagline) + '</p>' : '') +
+      '<p class="blessing-text" style="font-size:1.05rem">' + esc(desc) + '</p>';
     document.getElementById('about-info').innerHTML =
-      '<div class="info-card"><h3 class="info-card-title">\u26EA Service Times</h3><div class="info-card-text">' + esc(churchSettings.service_times || '') + '</div></div>' +
-      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDCCD Location</h3><p class="info-card-text">' + esc(churchSettings.address || '') + '</p>' +
-      (churchSettings.city ? '<p class="info-card-text">' + esc(churchSettings.city) + (churchSettings.state ? ', ' + esc(churchSettings.state) : '') + (churchSettings.zip_code ? ' ' + esc(churchSettings.zip_code) : '') + '</p>' : '') +
-      '<p class="info-card-text" style="margin-top:0.4rem">\uD83D\uDCDE ' + esc(churchSettings.phone || '') + '</p><p class="info-card-text">\u2709\uFE0F ' + esc(churchSettings.email || '') + '</p></div>' +
-      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDC64 Leadership</h3><p class="info-card-text">Lead Pastor: ' + esc(churchSettings.pastor_name || '') + '</p>' +
-      (churchSettings.pastor_title ? '<p class="info-card-text">' + esc(churchSettings.pastor_title) + '</p>' : '') + '</div>' +
+      '<div class="info-card"><h3 class="info-card-title">\u26EA Service Times</h3><div class="info-card-text">' + esc(s.service_times || '') + '</div></div>' +
+      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDCCD Location</h3><p class="info-card-text">' + esc(addr) + '</p>' +
+      (s.city ? '<p class="info-card-text">' + esc(s.city) + (s.state ? ', ' + esc(s.state) : '') + (s.zip_code ? ' ' + esc(s.zip_code) : '') + '</p>' : '') +
+      '<p class="info-card-text" style="margin-top:0.4rem">\uD83D\uDCDE ' + esc(phone) + '</p><p class="info-card-text">\u2709\uFE0F ' + esc(email) + '</p></div>' +
+      '<div class="info-card"><h3 class="info-card-title">\uD83D\uDC64 Leadership</h3><p class="info-card-text">Lead Pastor: ' + esc(s.pastor_name || '') + '</p>' +
+      (s.pastor_title ? '<p class="info-card-text">' + esc(s.pastor_title) + '</p>' : '') + '</div>' +
       '<div class="info-card"><h3 class="info-card-title">\uD83C\uDF10 Connect Online</h3><p class="info-card-text">Follow us on social media and stay connected.</p><div class="social-links">' +
-      (churchSettings.facebook_url ? '<a class="social-link" href="' + esc(churchSettings.facebook_url) + '" target="_blank">Facebook</a>' : '') +
-      (churchSettings.youtube_url ? '<a class="social-link" href="' + esc(churchSettings.youtube_url) + '" target="_blank">YouTube</a>' : '') +
-      (churchSettings.instagram_url ? '<a class="social-link" href="' + esc(churchSettings.instagram_url) + '" target="_blank">Instagram</a>' : '') +
-      (churchSettings.twitter_url ? '<a class="social-link" href="' + esc(churchSettings.twitter_url) + '" target="_blank">Twitter</a>' : '') +
+      (s.facebook_url ? '<a class="social-link" href="' + esc(s.facebook_url) + '" target="_blank">Facebook</a>' : '') +
+      (s.youtube_url ? '<a class="social-link" href="' + esc(s.youtube_url) + '" target="_blank">YouTube</a>' : '') +
+      (s.instagram_url ? '<a class="social-link" href="' + esc(s.instagram_url) + '" target="_blank">Instagram</a>' : '') +
+      (s.twitter_url ? '<a class="social-link" href="' + esc(s.twitter_url) + '" target="_blank">Twitter</a>' : '') +
       '</div></div>';
   });
 }
