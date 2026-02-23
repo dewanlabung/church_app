@@ -158,6 +158,67 @@
     <p style="color:var(--text-secondary);margin-bottom:1.2rem;font-style:italic">"They triumphed over him by the blood of the Lamb and by the word of their testimony." &mdash; Revelation 12:11</p>
     <div class="cards-grid" id="all-testimonies"></div>
   </div>
+  <!-- CONTACT -->
+  <div class="page-section" id="page-contact">
+    <div class="section-header"><h2 class="section-title">&#9993;&#65039; Contact Us</h2></div>
+    <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-style:italic">"Let us therefore come boldly unto the throne of grace." &mdash; Hebrews 4:16</p>
+    <div class="contact-layout">
+      <div class="contact-form-card">
+        <h3 style="font-family:var(--font-display);font-size:1.2rem;color:var(--cream);margin-bottom:1rem">Send Us a Message</h3>
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" id="contact-name" placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input class="form-input" id="contact-email" type="email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" id="contact-phone" type="tel" placeholder="Enter your phone number (optional)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject *</label>
+          <input class="form-input" id="contact-subject" placeholder="What is this about?">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message *</label>
+          <textarea class="form-textarea" id="contact-message" rows="5" placeholder="Write your message here..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="submitContact()">&#9993;&#65039; Send Message</button>
+      </div>
+      <div class="contact-info-card">
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#128205;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Address</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-address">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#128222;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Phone</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-phone-info">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#9993;&#65039;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Email</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-email-info">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#9962;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Service Times</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-service-times">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- ABOUT -->
   <div class="page-section" id="page-about">
     <div class="section-header"><h2 class="section-title">&#9962; About Our Church</h2></div>
@@ -340,6 +401,36 @@
       <div class="pdf-viewer-loading" id="pdf-loading" style="display:none">Loading PDF...</div>
     </div>
     <button class="pdf-viewer-nav-arrow next" id="pdf-next" onclick="pdfNext()" disabled>&#9654;</button>
+  </div>
+</div>
+<!-- NEWSLETTER POPUP -->
+<div class="newsletter-popup" id="newsletter-popup">
+  <div class="newsletter-popup-content">
+    <button class="newsletter-popup-close" onclick="closeNewsletterPopup()">&#10005;</button>
+    <div class="newsletter-popup-icon">&#128140;</div>
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;color:var(--cream);margin-bottom:0.4rem">Stay Connected</h3>
+    <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:1rem">Subscribe to our newsletter for weekly updates, devotionals, and church announcements.</p>
+    <div class="form-group" style="margin-bottom:0.6rem">
+      <input class="form-input" id="newsletter-name" placeholder="Your name (optional)" style="text-align:center">
+    </div>
+    <div class="form-group" style="margin-bottom:0.8rem">
+      <input class="form-input" id="newsletter-email" type="email" placeholder="Enter your email address" style="text-align:center">
+    </div>
+    <button class="btn-primary" onclick="submitNewsletter()">&#128140; Subscribe Now</button>
+    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem">We respect your privacy. Unsubscribe anytime.</p>
+  </div>
+</div>
+<!-- NEWSLETTER INLINE (footer) -->
+<div class="newsletter-footer" id="newsletter-footer">
+  <div class="newsletter-footer-inner">
+    <div class="newsletter-footer-text">
+      <h3 style="font-family:var(--font-display);font-size:1.1rem;color:var(--cream);margin-bottom:0.3rem">&#128140; Join Our Newsletter</h3>
+      <p style="font-size:0.85rem;color:var(--text-secondary)">Get weekly updates delivered to your inbox.</p>
+    </div>
+    <div class="newsletter-footer-form">
+      <input class="form-input" id="newsletter-footer-email" type="email" placeholder="Your email address" style="flex:1;min-width:200px">
+      <button class="btn-primary" style="width:auto;padding:10px 24px;white-space:nowrap" onclick="submitFooterNewsletter()">Subscribe</button>
+    </div>
   </div>
 </div>
 <!-- TOAST -->

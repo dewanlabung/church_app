@@ -531,6 +531,42 @@ body::before {
 .testimony-card { position: relative; overflow: hidden; }
 .testimony-card:hover { border-color: var(--gold); }
 .testimony-card .card-desc { font-family: var(--font-elegant); font-size: 0.95rem; line-height: 1.7; }
+/* CONTACT PAGE */
+.contact-layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; }
+.contact-form-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl);
+  padding: 2rem; transition: all 0.3s;
+}
+.contact-info-card { display: flex; flex-direction: column; gap: 1.2rem; }
+.contact-info-item {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 1.2rem 1.4rem; display: flex; align-items: flex-start; gap: 1rem; transition: all 0.3s;
+}
+.contact-info-item:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+.contact-info-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+/* NEWSLETTER POPUP */
+.newsletter-popup {
+  position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(120%);
+  z-index: 350; max-width: 420px; width: calc(100% - 2rem);
+  background: var(--bg-secondary); border: 1px solid var(--border-strong); border-radius: var(--radius-xl);
+  padding: 2rem; box-shadow: var(--shadow-lg); text-align: center;
+  transition: transform 0.4s ease, opacity 0.4s ease; opacity: 0;
+}
+.newsletter-popup.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.newsletter-popup-close {
+  position: absolute; top: 12px; right: 12px; background: none; border: none;
+  color: var(--text-muted); cursor: pointer; font-size: 1.1rem; padding: 4px;
+}
+.newsletter-popup-close:hover { color: var(--text-primary); }
+.newsletter-popup-icon { font-size: 2.2rem; margin-bottom: 0.6rem; }
+/* NEWSLETTER FOOTER */
+.newsletter-footer {
+  background: linear-gradient(135deg, var(--bg-card), rgba(201,168,76,0.05));
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  padding: 1.5rem 2rem; margin: 2rem 1.5rem; max-width: 1300px;
+}
+.newsletter-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+.newsletter-footer-form { display: flex; gap: 0.6rem; flex: 1; max-width: 450px; }
 /* RESPONSIVE */
 @media (max-width: 600px) {
   .main-content { padding: 0.8rem; }
@@ -541,5 +577,8 @@ body::before {
   .sermon-card { flex-direction: column; }
   .nav-brand-text { font-size: 0.92rem; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .volunteer-grid { grid-template-columns: repeat(2, 1fr); }
+  .contact-layout { grid-template-columns: 1fr; }
+  .newsletter-footer-inner { flex-direction: column; text-align: center; }
+  .newsletter-footer-form { flex-direction: column; max-width: 100%; }
 }
 </style>

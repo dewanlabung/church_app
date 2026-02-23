@@ -180,6 +180,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Newsletter Admin
     Route::get('/newsletter/subscribers', [NewsletterController::class, 'subscribers']);
+    Route::get('/newsletter/subscribers/export', [NewsletterController::class, 'exportSubscribers']);
+    Route::get('/newsletter/templates', [NewsletterController::class, 'templates']);
+    Route::post('/newsletter/templates', [NewsletterController::class, 'storeTemplate']);
+    Route::put('/newsletter/templates/{template}', [NewsletterController::class, 'updateTemplate']);
+    Route::delete('/newsletter/templates/{template}', [NewsletterController::class, 'destroyTemplate']);
+    Route::post('/newsletter/templates/{template}/send', [NewsletterController::class, 'sendTemplate']);
 
     // Announcements CRUD
     Route::get('/announcements', [AnnouncementController::class, 'index']);

@@ -1,8 +1,8 @@
 <script>
 var API = '/api';
-var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','about'];
-var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',about:'About'};
-var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',about:'\u26EA'};
+var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','contact','about'];
+var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',contact:'Contact',about:'About'};
+var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',contact:'\u2709\uFE0F',about:'\u26EA'};
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
@@ -374,6 +374,7 @@ function loadChurchSettings() {
       '<h2 class="blessing-title" style="font-size:1.8rem">' + esc(name) + '</h2>' +
       (s.tagline ? '<p style="color:var(--gold);font-style:italic;margin-bottom:0.5rem">' + esc(s.tagline) + '</p>' : '') +
       '<p class="blessing-text" style="font-size:1.05rem">' + esc(desc) + '</p>';
+    populateContactInfo();
     document.getElementById('about-info').innerHTML =
       '<div class="info-card"><h3 class="info-card-title">\u26EA Service Times</h3><div class="info-card-text">' + esc(s.service_times || '') + '</div></div>' +
       '<div class="info-card"><h3 class="info-card-title">\uD83D\uDCCD Location</h3><p class="info-card-text">' + esc(addr) + '</p>' +
@@ -485,6 +486,92 @@ function submitTestimony() {
     }
   });
 }
+
+/* ===== CONTACT FORM ===== */
+function submitContact() {
+  var name = document.getElementById('contact-name').value;
+  var email = document.getElementById('contact-email').value;
+  var phone = document.getElementById('contact-phone').value;
+  var subject = document.getElementById('contact-subject').value;
+  var message = document.getElementById('contact-message').value;
+  if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+    showToast('Please fill in all required fields.'); return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/contact', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, email: email, phone: phone || null, subject: subject, message: message })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('contact-name').value = '';
+      document.getElementById('contact-email').value = '';
+      document.getElementById('contact-phone').value = '';
+      document.getElementById('contact-subject').value = '';
+      document.getElementById('contact-message').value = '';
+      showToast('\u2709\uFE0F Message sent! We will get back to you soon.');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed to send message. Please try again.');
+    }
+  });
+}
+function populateContactInfo() {
+  var s = churchSettings;
+  var addr = s.address || s.church_address || 'Address not available';
+  var city = s.city ? s.city + (s.state ? ', ' + s.state : '') + (s.zip_code ? ' ' + s.zip_code : '') : '';
+  document.getElementById('contact-address').textContent = addr + (city ? '\n' + city : '');
+  document.getElementById('contact-phone-info').textContent = s.phone || s.church_phone || 'Phone not available';
+  document.getElementById('contact-email-info').textContent = s.email || s.church_email || 'Email not available';
+  document.getElementById('contact-service-times').textContent = s.service_times || 'Check our About page for details';
+}
+
+/* ===== NEWSLETTER ===== */
+var newsletterDismissed = false;
+function showNewsletterPopup() {
+  if (newsletterDismissed || sessionStorage.getItem('newsletter-dismissed') || localStorage.getItem('newsletter-subscribed')) return;
+  document.getElementById('newsletter-popup').classList.add('show');
+}
+function closeNewsletterPopup() {
+  document.getElementById('newsletter-popup').classList.remove('show');
+  newsletterDismissed = true;
+  sessionStorage.setItem('newsletter-dismissed', '1');
+}
+function submitNewsletter() {
+  var email = document.getElementById('newsletter-email').value;
+  var name = document.getElementById('newsletter-name').value;
+  if (!email.trim()) { showToast('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, name: name || null })
+  }).then(function(res) {
+    if (res && res.success) {
+      closeNewsletterPopup();
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Thank you for subscribing! Check your inbox soon.');
+    } else {
+      showToast(res && res.message ? res.message : 'Subscription failed. Please try again.');
+    }
+  });
+}
+function submitFooterNewsletter() {
+  var email = document.getElementById('newsletter-footer-email').value;
+  if (!email.trim()) { showToast('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('newsletter-footer-email').value = '';
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Subscribed! Thank you for joining our newsletter.');
+    } else {
+      showToast(res && res.message ? res.message : 'Subscription failed. Please try again.');
+    }
+  });
+}
+// Show newsletter popup after 15 seconds of browsing
+setTimeout(function() { showNewsletterPopup(); }, 15000);
 
 /* ===== PWA ===== */
 var deferredPrompt = null;
