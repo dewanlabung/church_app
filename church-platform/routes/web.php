@@ -52,6 +52,10 @@ Route::post('/logout', function (\Illuminate\Http\Request $request) {
     return redirect('/login');
 })->name('logout');
 
+// Social Auth Routes
+Route::get('/auth/{provider}/redirect', [AuthController::class, 'socialRedirect'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [AuthController::class, 'socialCallback'])->name('social.callback');
+
 // Admin Routes
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('admin.dashboard');

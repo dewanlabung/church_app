@@ -36,14 +36,17 @@ function toggleTheme() {
 /* ===== API ===== */
 function apiCall(path, opts) {
   opts = opts || {};
-  return fetch(API + path, Object.assign({
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
-    }
-  }, opts)).then(function(res) {
+  var defaultHeaders = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+  };
+  if (opts.headers) {
+    Object.keys(opts.headers).forEach(function(k) { defaultHeaders[k] = opts.headers[k]; });
+    delete opts.headers;
+  }
+  return fetch(API + path, Object.assign({ headers: defaultHeaders }, opts)).then(function(res) {
     if (!res.ok && res.status === 404) return null;
     return res.json();
   }).catch(function(e) { console.error('API error:', path, e); return null; });
@@ -431,10 +434,209 @@ document.getElementById('pwa-install-btn').addEventListener('click', function() 
   }
 });
 
+/* ===== AUTH ===== */
+var authToken = localStorage.getItem('auth_token') || null;
+var authUser = null;
+try { authUser = JSON.parse(localStorage.getItem('auth_user')); } catch(e) {}
+
+function updateAuthUI() {
+  var loginBtn = document.getElementById('auth-login-btn');
+  var userMenu = document.getElementById('auth-user-menu');
+  var mobileLoginBtn = document.getElementById('mobile-login-btn');
+  var mobileUserInfo = document.getElementById('mobile-user-info');
+  if (authUser && authToken) {
+    loginBtn.style.display = 'none';
+    userMenu.style.display = '';
+    var initials = (authUser.name || '?').split(' ').map(function(n) { return n[0]; }).join('').toUpperCase().slice(0, 2);
+    document.getElementById('auth-avatar-text').textContent = initials;
+    document.getElementById('auth-dropdown-name').textContent = authUser.name || '';
+    document.getElementById('auth-dropdown-email').textContent = authUser.email || '';
+    if (mobileLoginBtn) mobileLoginBtn.style.display = 'none';
+    if (mobileUserInfo) { mobileUserInfo.style.display = ''; document.getElementById('mobile-user-name').textContent = authUser.name || ''; }
+  } else {
+    loginBtn.style.display = '';
+    userMenu.style.display = 'none';
+    if (mobileLoginBtn) mobileLoginBtn.style.display = '';
+    if (mobileUserInfo) mobileUserInfo.style.display = 'none';
+  }
+}
+
+function toggleUserDropdown() {
+  var dd = document.getElementById('auth-dropdown');
+  dd.classList.toggle('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+  var dd = document.getElementById('auth-dropdown');
+  var btn = document.getElementById('auth-avatar-btn');
+  if (dd && btn && !btn.contains(e.target) && !dd.contains(e.target)) {
+    dd.classList.remove('open');
+  }
+});
+
+function showLoginForm() {
+  document.getElementById('auth-login-form').style.display = '';
+  document.getElementById('auth-register-form').style.display = 'none';
+  document.getElementById('auth-modal-title').textContent = 'Sign In';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+}
+
+function showRegisterForm() {
+  document.getElementById('auth-login-form').style.display = 'none';
+  document.getElementById('auth-register-form').style.display = '';
+  document.getElementById('auth-modal-title').textContent = 'Create Account';
+  document.getElementById('auth-error').style.display = 'none';
+  document.getElementById('reg-error').style.display = 'none';
+}
+
+function doLogin() {
+  var email = document.getElementById('auth-email').value.trim();
+  var password = document.getElementById('auth-password').value;
+  var errEl = document.getElementById('auth-error');
+  errEl.style.display = 'none';
+
+  if (!email || !password) { errEl.textContent = 'Please enter email and password.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('auth-submit-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+
+  apiCall('/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, password: password })
+  }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'Sign In';
+    if (res && res.token) {
+      authToken = res.token;
+      authUser = res.user;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_user', JSON.stringify(authUser));
+      updateAuthUI();
+      closeModal('auth');
+      showToast('Welcome back, ' + (authUser.name || '') + '!');
+      document.getElementById('auth-email').value = '';
+      document.getElementById('auth-password').value = '';
+    } else {
+      errEl.textContent = (res && res.message) || 'Invalid credentials.';
+      errEl.style.display = '';
+    }
+  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Sign In';
+    errEl.textContent = 'Invalid credentials. Please try again.';
+    errEl.style.display = '';
+  });
+}
+
+function doRegister() {
+  var name = document.getElementById('reg-name').value.trim();
+  var email = document.getElementById('reg-email').value.trim();
+  var password = document.getElementById('reg-password').value;
+  var confirm = document.getElementById('reg-password-confirm').value;
+  var errEl = document.getElementById('reg-error');
+  errEl.style.display = 'none';
+
+  if (!name || !email || !password || !confirm) { errEl.textContent = 'Please fill in all fields.'; errEl.style.display = ''; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = ''; return; }
+  if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('reg-submit-btn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+
+  apiCall('/register', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, email: email, password: password, password_confirmation: confirm })
+  }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'Create Account';
+    if (res && res.token) {
+      authToken = res.token;
+      authUser = res.user;
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_user', JSON.stringify(authUser));
+      updateAuthUI();
+      closeModal('auth');
+      showToast('Welcome, ' + (authUser.name || '') + '! Account created successfully.');
+      document.getElementById('reg-name').value = '';
+      document.getElementById('reg-email').value = '';
+      document.getElementById('reg-password').value = '';
+      document.getElementById('reg-password-confirm').value = '';
+    } else {
+      errEl.textContent = (res && res.message) || 'Registration failed. Please try again.';
+      errEl.style.display = '';
+    }
+  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Create Account';
+    errEl.textContent = 'Registration failed. Email may already be in use.';
+    errEl.style.display = '';
+  });
+}
+
+function doLogout() {
+  var dd = document.getElementById('auth-dropdown');
+  dd.classList.remove('open');
+
+  if (authToken) {
+    apiCall('/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer ' + authToken,
+        'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+      }
+    });
+  }
+
+  authToken = null;
+  authUser = null;
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
+  updateAuthUI();
+  showToast('Signed out successfully.');
+}
+
+// Handle social auth callback (token passed via URL params)
+(function handleSocialAuthCallback() {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('auth_token');
+  var user = params.get('auth_user');
+  var error = params.get('auth_error');
+
+  if (token && user) {
+    try {
+      authToken = token;
+      authUser = JSON.parse(user);
+      localStorage.setItem('auth_token', authToken);
+      localStorage.setItem('auth_user', JSON.stringify(authUser));
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(function() { showToast('Welcome, ' + (authUser.name || '') + '!'); }, 500);
+    } catch(e) {}
+  } else if (error) {
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(function() { showToast(error); }, 500);
+  }
+})();
+
+// Enter key support for auth forms
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    var authModal = document.getElementById('modal-auth');
+    if (authModal && authModal.classList.contains('open')) {
+      if (document.getElementById('auth-login-form').style.display !== 'none') {
+        doLogin();
+      } else {
+        doRegister();
+      }
+    }
+  }
+});
+
 /* ===== INIT ===== */
 buildNav();
 buildStarInput();
 buildGiving();
+updateAuthUI();
 Promise.allSettled([
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()

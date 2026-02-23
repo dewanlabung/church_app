@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -109,5 +110,67 @@ class AuthController extends Controller
             'message' => 'Profile updated successfully.',
             'user'    => $user->fresh(),
         ]);
+    }
+
+    /**
+     * Redirect to social provider for OAuth.
+     */
+    public function socialRedirect(string $provider)
+    {
+        if (!in_array($provider, ['google', 'facebook'])) {
+            abort(404);
+        }
+
+        return Socialite::driver($provider)->redirect();
+    }
+
+    /**
+     * Handle social provider callback.
+     */
+    public function socialCallback(string $provider)
+    {
+        if (!in_array($provider, ['google', 'facebook'])) {
+            abort(404);
+        }
+
+        try {
+            $socialUser = Socialite::driver($provider)->user();
+        } catch (\Exception $e) {
+            return redirect('/?auth_error=' . urlencode('Social login failed. Please try again.'));
+        }
+
+        $user = User::where('provider', $provider)
+            ->where('provider_id', $socialUser->getId())
+            ->first();
+
+        if (!$user) {
+            $user = User::where('email', $socialUser->getEmail())->first();
+
+            if ($user) {
+                $user->update([
+                    'provider'    => $provider,
+                    'provider_id' => $socialUser->getId(),
+                    'avatar'      => $user->avatar ?: $socialUser->getAvatar(),
+                ]);
+            } else {
+                $user = User::create([
+                    'name'        => $socialUser->getName(),
+                    'email'       => $socialUser->getEmail(),
+                    'provider'    => $provider,
+                    'provider_id' => $socialUser->getId(),
+                    'avatar'      => $socialUser->getAvatar(),
+                    'password'    => Hash::make(str()->random(24)),
+                ]);
+            }
+        }
+
+        $token = $user->createToken('auth-token')->plainTextToken;
+
+        return redirect('/?auth_token=' . $token . '&auth_user=' . urlencode(json_encode([
+            'id'     => $user->id,
+            'name'   => $user->name,
+            'email'  => $user->email,
+            'avatar' => $user->avatar,
+        ])));
     }
 }
