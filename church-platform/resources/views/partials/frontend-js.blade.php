@@ -117,7 +117,7 @@ function prayerCard(p) {
   var prayed = prayedIds[p.id];
   return '<div class="card"><div class="prayer-name">' + esc(p.name) + '</div>' +
     (p.subject ? '<div style="font-size:0.85rem;color:var(--gold);margin-bottom:0.3rem;font-weight:600">' + esc(p.subject) + '</div>' : '') +
-    '<div class="prayer-text">' + esc(p.description) + '</div>' +
+    '<div class="prayer-text">' + esc(p.description || p.request) + '</div>' +
     '<div class="prayer-footer"><span class="prayer-date">' + fmtDate(p.created_at) + '</span>' +
     '<button class="pray-btn ' + (prayed ? 'prayed' : '') + '" onclick="doPray(' + p.id + ')">\uD83D\uDE4F ' + (p.prayer_count || 0) + ' ' + (prayed ? 'Prayed' : 'Pray') + '</button></div></div>';
 }
@@ -184,7 +184,7 @@ function submitPrayer() {
     method: 'POST',
     body: JSON.stringify({ name: isAnon ? 'Anonymous' : (name || 'Church Member'), subject: subject, description: desc, is_public: isPublic })
   }).then(function(res) {
-    if (res) {
+    if (res && res.prayer_request) {
       closeModal('prayer');
       document.getElementById('prayer-name').value = '';
       document.getElementById('prayer-subject').value = '';
@@ -193,6 +193,8 @@ function submitPrayer() {
       document.getElementById('prayer-public').checked = true;
       showToast('\uD83D\uDE4F Prayer request submitted. We\'re praying with you.');
       loadPrayers();
+    } else {
+      showToast('Failed to submit prayer request. Please try again.');
     }
   });
 }
@@ -206,7 +208,7 @@ function submitReview() {
     method: 'POST',
     body: JSON.stringify({ name: name, email: email, rating: selectedRating, title: title, content: text })
   }).then(function(res) {
-    if (res) {
+    if (res && res.success) {
       closeModal('review');
       document.getElementById('review-name').value = '';
       document.getElementById('review-email').value = '';
@@ -215,6 +217,8 @@ function submitReview() {
       selectedRating = 0; buildStarInput();
       showToast('\u2B50 Thank you for your review! It will appear once approved.');
       loadReviews();
+    } else {
+      showToast('Failed to submit review. Please try again.');
     }
   });
 }
