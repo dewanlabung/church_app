@@ -96,6 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/verses', [VerseController::class, 'store']);
     Route::put('/verses/{verse}', [VerseController::class, 'update']);
     Route::delete('/verses/{verse}', [VerseController::class, 'destroy']);
+    Route::get('/verses/sample-csv', [VerseController::class, 'sampleCsv']);
+    Route::post('/verses/import-csv', [VerseController::class, 'importCsv']);
 
     // Blessings CRUD
     Route::get('/blessings', [BlessingController::class, 'index']);
