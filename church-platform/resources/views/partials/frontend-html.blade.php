@@ -286,6 +286,29 @@
     </div>
   </div>
 </div>
+<!-- PDF VIEWER -->
+<div class="pdf-viewer-overlay" id="pdf-viewer">
+  <div class="pdf-viewer-header">
+    <div class="pdf-viewer-title" id="pdf-viewer-title">Book Title</div>
+    <div class="pdf-viewer-controls">
+      <button class="pdf-viewer-btn" onclick="pdfZoom(-0.2)" title="Zoom Out">&#8722;</button>
+      <button class="pdf-viewer-btn" onclick="pdfZoom(0.2)" title="Zoom In">&#43;</button>
+      <button class="pdf-viewer-btn" onclick="pdfZoom(0, true)" title="Fit to Page">Fit</button>
+      <span class="pdf-viewer-page-info" id="pdf-page-info">0 / 0</span>
+      <button class="pdf-viewer-btn close-btn" onclick="closePdfViewer()">&#10005; Close</button>
+    </div>
+  </div>
+  <div class="pdf-viewer-body">
+    <button class="pdf-viewer-nav-arrow prev" id="pdf-prev" onclick="pdfPrev()" disabled>&#9664;</button>
+    <div class="pdf-viewer-page-wrap">
+      <div class="pdf-viewer-canvas-container" id="pdf-canvas-container">
+        <canvas id="pdf-canvas"></canvas>
+      </div>
+      <div class="pdf-viewer-loading" id="pdf-loading" style="display:none">Loading PDF...</div>
+    </div>
+    <button class="pdf-viewer-nav-arrow next" id="pdf-next" onclick="pdfNext()" disabled>&#9654;</button>
+  </div>
+</div>
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 <!-- PWA INSTALL -->
