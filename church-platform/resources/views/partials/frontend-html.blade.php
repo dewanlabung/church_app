@@ -149,6 +149,15 @@
     </div>
     <div class="cards-grid" id="all-reviews"></div>
   </div>
+  <!-- TESTIMONIES -->
+  <div class="page-section" id="page-testimonies">
+    <div class="section-header">
+      <h2 class="section-title">&#10013; Testimonies</h2>
+      <button class="section-action" onclick="openModal('testimony')">+ Share Your Testimony</button>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:1.2rem;font-style:italic">"They triumphed over him by the blood of the Lamb and by the word of their testimony." &mdash; Revelation 12:11</p>
+    <div class="cards-grid" id="all-testimonies"></div>
+  </div>
   <!-- ABOUT -->
   <div class="page-section" id="page-about">
     <div class="section-header"><h2 class="section-title">&#9962; About Our Church</h2></div>
@@ -213,6 +222,30 @@
       <textarea class="form-textarea" id="review-text" placeholder="Share your experience with our church..."></textarea>
     </div>
     <button class="btn-primary" onclick="submitReview()">&#11088; Submit Review</button>
+  </div>
+</div>
+<!-- TESTIMONY MODAL -->
+<div class="modal-overlay" id="modal-testimony">
+  <div class="modal-content">
+    <div class="modal-title">Share Your Testimony <button class="modal-close" onclick="closeModal('testimony')">&#10005;</button></div>
+    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;font-style:italic">"Always be prepared to give an answer to everyone who asks you to give the reason for the hope that you have." &mdash; 1 Peter 3:15</p>
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input class="form-input" id="testimony-name" placeholder="Enter your full name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date of Born Again</label>
+      <input class="form-input" id="testimony-born-again" type="date" placeholder="When did you accept Christ?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Baptism Date</label>
+      <input class="form-input" id="testimony-baptism" type="date" placeholder="When were you baptized?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Testimony</label>
+      <textarea class="form-textarea" id="testimony-text" rows="6" placeholder="Share your testimony... How did God work in your life? What has He done for you? (minimum 20 characters)"></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitTestimony()">&#10013; Submit Testimony</button>
   </div>
 </div>
 <!-- AUTH MODAL -->

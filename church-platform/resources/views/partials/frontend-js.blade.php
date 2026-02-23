@@ -1,8 +1,8 @@
 <script>
 var API = '/api';
-var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','about'];
-var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',about:'About'};
-var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',about:'\u26EA'};
+var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','about'];
+var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',about:'About'};
+var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',about:'\u26EA'};
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
@@ -415,6 +415,77 @@ function selectGiving(amount, btn) {
   document.getElementById('custom-amount').value = '';
 }
 
+/* ===== TESTIMONIES ===== */
+function testimonyCard(t) {
+  return '<div class="card testimony-card" onclick="viewTestimony(\'' + esc(t.slug) + '\')" style="cursor:pointer">' +
+    (t.featured_image ? '<div style="margin:-1.4rem -1.4rem 1rem;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;height:160px"><img src="/storage/' + esc(t.featured_image) + '" alt="' + esc(t.name) + '" style="width:100%;height:100%;object-fit:cover"></div>' : '') +
+    '<div class="prayer-name" style="display:flex;align-items:center;gap:8px">\u271D ' + esc(t.name) + '</div>' +
+    (t.born_again_date ? '<p class="card-meta">\uD83D\uDD25 Born Again: ' + fmtDate(t.born_again_date) + '</p>' : '') +
+    (t.baptism_date ? '<p class="card-meta">\uD83D\uDCA7 Baptized: ' + fmtDate(t.baptism_date) + '</p>' : '') +
+    '<p class="card-desc" style="margin-top:0.6rem">\u201C' + esc(t.excerpt || (t.testimony || '').substring(0, 150)) + '...\u201D</p>' +
+    '<div class="prayer-footer" style="margin-top:0.8rem"><span class="prayer-date">' + fmtDate(t.published_at || t.created_at) + '</span>' +
+    '<span style="font-size:0.78rem;color:var(--text-muted)">\uD83D\uDC41 ' + (t.view_count || 0) + ' views</span></div></div>';
+}
+function loadTestimonies() {
+  return apiCall('/testimonies/approved').then(function(res) {
+    var testimonies = (res && res.data) ? res.data : [];
+    document.getElementById('all-testimonies').innerHTML = testimonies.map(testimonyCard).join('') || '<p class="loading">No testimonies shared yet. Be the first!</p>';
+  });
+}
+function viewTestimony(slug) {
+  apiCall('/testimonies/' + slug).then(function(res) {
+    if (res && res.success && res.data) {
+      var t = res.data;
+      var html = '<div class="modal-content" style="max-width:640px">' +
+        '<div class="modal-title">\u271D ' + esc(t.name) + '\'s Testimony <button class="modal-close" onclick="closeModal(\'testimony-view\')">\u2715</button></div>' +
+        (t.featured_image ? '<div style="margin-bottom:1rem;border-radius:var(--radius-md);overflow:hidden"><img src="/storage/' + esc(t.featured_image) + '" alt="' + esc(t.name) + '" style="width:100%;max-height:250px;object-fit:cover"></div>' : '') +
+        '<div style="display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap">' +
+        (t.born_again_date ? '<div style="font-size:0.85rem;color:var(--text-secondary)"><strong style="color:var(--gold)">\uD83D\uDD25 Born Again:</strong> ' + fmtDate(t.born_again_date) + '</div>' : '') +
+        (t.baptism_date ? '<div style="font-size:0.85rem;color:var(--text-secondary)"><strong style="color:var(--gold)">\uD83D\uDCA7 Baptized:</strong> ' + fmtDate(t.baptism_date) + '</div>' : '') +
+        '</div>' +
+        '<div style="font-family:var(--font-elegant);font-size:1.05rem;line-height:1.8;color:var(--text-primary);white-space:pre-wrap">' + esc(t.testimony) + '</div>' +
+        '<div style="margin-top:1.2rem;padding-top:0.8rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text-muted);display:flex;justify-content:space-between">' +
+        '<span>' + fmtDate(t.published_at || t.created_at) + '</span>' +
+        '<span>\uD83D\uDC41 ' + (t.view_count || 0) + ' views</span></div></div>';
+      // Create a dynamic view modal
+      var overlay = document.getElementById('modal-testimony-view');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'modal-testimony-view';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal('testimony-view'); });
+        document.body.appendChild(overlay);
+      }
+      overlay.innerHTML = html;
+      openModal('testimony-view');
+    }
+  });
+}
+function submitTestimony() {
+  var name = document.getElementById('testimony-name').value;
+  var bornAgain = document.getElementById('testimony-born-again').value;
+  var baptism = document.getElementById('testimony-baptism').value;
+  var text = document.getElementById('testimony-text').value;
+  if (!name.trim() || !text.trim()) { showToast('Please enter your name and testimony.'); return; }
+  if (text.trim().length < 20) { showToast('Please write at least 20 characters for your testimony.'); return; }
+  apiCall('/testimonies', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, born_again_date: bornAgain || null, baptism_date: baptism || null, testimony: text })
+  }).then(function(res) {
+    if (res && res.success) {
+      closeModal('testimony');
+      document.getElementById('testimony-name').value = '';
+      document.getElementById('testimony-born-again').value = '';
+      document.getElementById('testimony-baptism').value = '';
+      document.getElementById('testimony-text').value = '';
+      showToast('\u271D Thank you for sharing your testimony! It will appear after approval.');
+      loadTestimonies();
+    } else {
+      showToast(res && res.message ? res.message : 'Failed to submit testimony. Please try again.');
+    }
+  });
+}
+
 /* ===== PWA ===== */
 var deferredPrompt = null;
 function dismissPwaInstall() {
@@ -756,7 +827,7 @@ buildGiving();
 updateAuthUI();
 Promise.allSettled([
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
-  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()
+  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries()
 ]);
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
   m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });

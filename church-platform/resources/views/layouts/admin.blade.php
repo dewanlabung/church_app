@@ -123,6 +123,12 @@
                     Reviews
                 </a>
 
+                <a href="{{ route('admin.manage', 'testimonies') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/testimonies') ? 'active' : '' }}">
+                    <i class="fas fa-cross w-5 mr-3 text-center text-indigo-300"></i>
+                    Testimonies
+                </a>
+
                 <a href="{{ route('admin.manage', 'galleries') }}"
                    class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/galleries') ? 'active' : '' }}">
                     <i class="fas fa-images w-5 mr-3 text-center text-indigo-300"></i>

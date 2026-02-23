@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\SermonController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SitemapController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\TestimonyController;
 use App\Http\Controllers\Api\VerseController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,9 @@ Route::get('/books/{book}/download', [BookController::class, 'download']);
 Route::get('/bible-studies/featured', [BibleStudyController::class, 'featured']);
 Route::get('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'show']);
 Route::get('/reviews/approved', [ReviewController::class, 'approved']);
+Route::get('/testimonies/approved', [TestimonyController::class, 'approved']);
+Route::get('/testimonies/featured', [TestimonyController::class, 'featured']);
+Route::get('/testimonies/{slug}', [TestimonyController::class, 'show']);
 Route::get('/galleries', [GalleryController::class, 'index']);
 Route::get('/galleries/{gallery}', [GalleryController::class, 'show']);
 Route::get('/ministries', [MinistryController::class, 'index']);
@@ -79,6 +83,7 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe']);
 Route::post('/prayer-requests', [PrayerRequestController::class, 'store']);
 Route::post('/reviews', [ReviewController::class, 'store']);
+Route::post('/testimonies', [TestimonyController::class, 'store']);
 Route::post('/events/{event}/register', [EventController::class, 'register']);
 Route::post('/prayer-requests/{prayerRequest}/pray', [PrayerRequestController::class, 'pray']);
 
@@ -142,6 +147,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/bible-studies', [BibleStudyController::class, 'store']);
     Route::put('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'update']);
     Route::delete('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'destroy']);
+
+    // Testimonies Admin
+    Route::get('/testimonies', [TestimonyController::class, 'index']);
+    Route::put('/testimonies/{testimony}', [TestimonyController::class, 'update']);
+    Route::patch('/testimonies/{testimony}/status', [TestimonyController::class, 'updateStatus']);
+    Route::delete('/testimonies/{testimony}', [TestimonyController::class, 'destroy']);
 
     // Reviews Admin
     Route::get('/reviews', [ReviewController::class, 'index']);

@@ -20,6 +20,7 @@ import PagesManager from './admin/PagesManager';
 import CategoriesManager from './admin/CategoriesManager';
 import MenuManager from './admin/MenuManager';
 import RolesManager from './admin/RolesManager';
+import TestimoniesManager from './admin/TestimoniesManager';
 
 const components = {
     'verses': VersesManager,
@@ -44,6 +45,7 @@ const components = {
     'categories': CategoriesManager,
     'menus': MenuManager,
     'roles': RolesManager,
+    'testimonies': TestimoniesManager,
 };
 
 export default function AdminApp({ section }) {

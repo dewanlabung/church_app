@@ -62,7 +62,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/manage/{section}', function ($section) {
         $validSections = [
             'verses', 'blessings', 'prayers', 'prayer-requests', 'events', 'posts', 'sermons',
-            'books', 'bible-studies', 'reviews', 'galleries', 'ministries',
+            'books', 'bible-studies', 'reviews', 'testimonies', 'galleries', 'ministries',
             'contacts', 'newsletter', 'donations', 'users', 'settings',
             'announcements', 'pages', 'categories', 'menus', 'roles',
         ];

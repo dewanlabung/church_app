@@ -527,6 +527,10 @@ body::before {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,0.5); color: var(--gold); font-size: 1rem; font-weight: 600;
 }
+/* TESTIMONY */
+.testimony-card { position: relative; overflow: hidden; }
+.testimony-card:hover { border-color: var(--gold); }
+.testimony-card .card-desc { font-family: var(--font-elegant); font-size: 0.95rem; line-height: 1.7; }
 /* RESPONSIVE */
 @media (max-width: 600px) {
   .main-content { padding: 0.8rem; }

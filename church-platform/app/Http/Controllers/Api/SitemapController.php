@@ -9,6 +9,7 @@ use App\Models\Book;
 use App\Models\BibleStudy;
 use App\Models\Event;
 use App\Models\Ministry;
+use App\Models\Testimony;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
@@ -52,6 +53,12 @@ class SitemapController extends Controller
         $ministries = Ministry::where('is_active', true)->get();
         foreach ($ministries as $ministry) {
             $xml .= $this->urlEntry($baseUrl . '/ministry/' . $ministry->slug, $ministry->updated_at->toDateString(), 'monthly', '0.5');
+        }
+
+        // Testimonies
+        $testimonies = Testimony::whereIn('status', ['approved', 'featured'])->get();
+        foreach ($testimonies as $testimony) {
+            $xml .= $this->urlEntry($baseUrl . '/testimony/' . $testimony->slug, $testimony->updated_at->toDateString(), 'monthly', '0.6');
         }
 
         $xml .= '</urlset>';
