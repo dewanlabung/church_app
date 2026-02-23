@@ -118,7 +118,7 @@ export default function PagesManager() {
             )} />
             <Pagination meta={meta} onPageChange={fetchItems} />
             {modal && (
-                <Modal title={editing ? 'Edit Page' : 'New Page'} onClose={() => setModal(false)}>
+                <Modal isOpen={true} title={editing ? 'Edit Page' : 'New Page'} onClose={() => setModal(false)}>
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
                     <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} rows={8} />
                     <FormField label="Excerpt" name="excerpt" type="textarea" value={form.excerpt} onChange={handleChange} rows={2} />

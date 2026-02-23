@@ -93,7 +93,7 @@ export default function AnnouncementsManager() {
             )} />
             <Pagination meta={meta} onPageChange={fetchItems} />
             {modal && (
-                <Modal title={editing ? 'Edit Announcement' : 'New Announcement'} onClose={() => setModal(false)}>
+                <Modal isOpen={true} title={editing ? 'Edit Announcement' : 'New Announcement'} onClose={() => setModal(false)}>
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
                     <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} rows={3} />
                     <FormField label="Type" name="type" type="select" value={form.type} onChange={handleChange} options={[{ value: 'general', label: 'General' }, { value: 'urgent', label: 'Urgent' }, { value: 'event', label: 'Event' }, { value: 'blog', label: 'Blog' }]} />

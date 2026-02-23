@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SermonController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SitemapController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VerseController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -199,6 +200,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/roles/{role}', [RoleController::class, 'update']);
     Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
     Route::post('/roles/assign', [RoleController::class, 'assignRole']);
+
+    // Users CRUD
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
 
     // Settings
     Route::put('/settings', [SettingController::class, 'update']);
