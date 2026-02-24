@@ -227,4 +227,67 @@ class SettingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get homepage widget configuration.
+     */
+    public function widgetConfig(): JsonResponse
+    {
+        $setting = Setting::first();
+
+        $defaultWidgets = [
+            ['id' => 'announcements', 'label' => 'Announcements Ticker', 'icon' => 'fa-bullhorn', 'enabled' => true, 'settings' => []],
+            ['id' => 'verse', 'label' => 'Verse of the Day', 'icon' => 'fa-book-bible', 'enabled' => true, 'settings' => []],
+            ['id' => 'blessing', 'label' => "Today's Blessing", 'icon' => 'fa-hand-holding-heart', 'enabled' => true, 'settings' => []],
+            ['id' => 'posts', 'label' => 'Latest Posts / News', 'icon' => 'fa-newspaper', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'prayers', 'label' => 'Prayer Requests', 'icon' => 'fa-praying-hands', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'events', 'label' => 'Upcoming Events', 'icon' => 'fa-calendar-alt', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'sermon', 'label' => 'Latest Sermon', 'icon' => 'fa-microphone-alt', 'enabled' => true, 'settings' => []],
+            ['id' => 'testimonies', 'label' => 'Testimonies', 'icon' => 'fa-cross', 'enabled' => false, 'settings' => ['count' => 3]],
+            ['id' => 'reviews', 'label' => 'Reviews', 'icon' => 'fa-star', 'enabled' => false, 'settings' => ['count' => 3]],
+            ['id' => 'ministries', 'label' => 'Ministries', 'icon' => 'fa-hands-helping', 'enabled' => false, 'settings' => []],
+            ['id' => 'galleries', 'label' => 'Photo Gallery', 'icon' => 'fa-images', 'enabled' => false, 'settings' => ['count' => 6]],
+            ['id' => 'newsletter', 'label' => 'Newsletter Signup', 'icon' => 'fa-mail-bulk', 'enabled' => false, 'settings' => []],
+            ['id' => 'contact', 'label' => 'Quick Contact', 'icon' => 'fa-envelope', 'enabled' => false, 'settings' => []],
+        ];
+
+        $config = $setting && $setting->widget_config ? $setting->widget_config : $defaultWidgets;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'widgets' => $config,
+                'available_widgets' => $defaultWidgets,
+            ],
+        ]);
+    }
+
+    /**
+     * Save homepage widget configuration.
+     */
+    public function updateWidgetConfig(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'widgets'            => 'required|array',
+            'widgets.*.id'       => 'required|string',
+            'widgets.*.label'    => 'required|string',
+            'widgets.*.icon'     => 'required|string',
+            'widgets.*.enabled'  => 'required|boolean',
+            'widgets.*.settings' => 'nullable|array',
+        ]);
+
+        $setting = Setting::first();
+
+        if ($setting) {
+            $setting->update(['widget_config' => $validated['widgets']]);
+        } else {
+            $setting = Setting::create(['widget_config' => $validated['widgets']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Homepage layout saved successfully.',
+            'data'    => $setting->fresh()->widget_config,
+        ]);
+    }
 }

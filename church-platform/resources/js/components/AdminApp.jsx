@@ -21,6 +21,7 @@ import CategoriesManager from './admin/CategoriesManager';
 import MenuManager from './admin/MenuManager';
 import RolesManager from './admin/RolesManager';
 import TestimoniesManager from './admin/TestimoniesManager';
+import HomepageCustomizer from './admin/HomepageCustomizer';
 
 const components = {
     'verses': VersesManager,
@@ -46,6 +47,7 @@ const components = {
     'menus': MenuManager,
     'roles': RolesManager,
     'testimonies': TestimoniesManager,
+    'homepage': HomepageCustomizer,
 };
 
 export default function AdminApp({ section }) {

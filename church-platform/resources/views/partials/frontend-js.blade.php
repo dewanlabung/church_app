@@ -12,6 +12,7 @@ var selectedGiving = null;
 var allBooks = [];
 var bookFilter = 'All';
 var churchSettings = {};
+var widgetConfig = null;
 
 /* ===== THEME TOGGLE ===== */
 function getTheme() {
@@ -907,12 +908,148 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') { closePdfViewer(); }
 });
 
+/* ===== HOMEPAGE WIDGET ENGINE ===== */
+function loadWidgetConfig() {
+  return apiCall('/settings/widgets/public').then(function(res) {
+    if (res && res.data && res.data.widgets) {
+      widgetConfig = res.data.widgets;
+    }
+    applyWidgetLayout();
+  });
+}
+
+function applyWidgetLayout() {
+  var home = document.getElementById('page-home');
+  if (!home || !widgetConfig) return;
+
+  // Collect all home-widget elements
+  var allWidgets = {};
+  var els = home.querySelectorAll('.home-widget');
+  for (var i = 0; i < els.length; i++) {
+    var wid = els[i].id.replace('hw-', '');
+    allWidgets[wid] = els[i];
+  }
+
+  // Reorder and show/hide based on config
+  widgetConfig.forEach(function(w) {
+    var el = allWidgets[w.id];
+    if (!el) return;
+    // Move to end of parent (preserves config order)
+    home.appendChild(el);
+    // Show/hide
+    el.style.display = w.enabled ? '' : 'none';
+  });
+
+  // Load data for newly enabled home widgets
+  widgetConfig.forEach(function(w) {
+    if (!w.enabled) return;
+    var count = (w.settings && w.settings.count) ? w.settings.count : 3;
+    if (w.id === 'testimonies') loadHomeTestimonies(count);
+    if (w.id === 'reviews') loadHomeReviews(count);
+    if (w.id === 'ministries') loadHomeMinistries();
+    if (w.id === 'galleries') loadHomeGalleries(count);
+  });
+}
+
+function getWidgetSetting(widgetId, key, fallback) {
+  if (!widgetConfig) return fallback;
+  for (var i = 0; i < widgetConfig.length; i++) {
+    if (widgetConfig[i].id === widgetId && widgetConfig[i].settings) {
+      return widgetConfig[i].settings[key] !== undefined ? widgetConfig[i].settings[key] : fallback;
+    }
+  }
+  return fallback;
+}
+
+function loadHomeTestimonies(count) {
+  apiCall('/testimonies/approved').then(function(res) {
+    var testimonies = (res && res.data) ? res.data : [];
+    var el = document.getElementById('home-testimonies');
+    if (el) el.innerHTML = testimonies.slice(0, count || 3).map(testimonyCard).join('') || '<p class="loading">No testimonies yet.</p>';
+  });
+}
+function loadHomeReviews(count) {
+  apiCall('/reviews/approved').then(function(res) {
+    var reviews = [];
+    if (res && res.data) {
+      reviews = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
+    var el = document.getElementById('home-reviews');
+    if (el) el.innerHTML = reviews.slice(0, count || 3).map(reviewCard).join('') || '<p class="loading">No reviews yet.</p>';
+  });
+}
+function loadHomeMinistries() {
+  apiCall('/ministries').then(function(res) {
+    var list = (res && res.data && res.data.data) ? res.data.data : [];
+    var el = document.getElementById('home-ministries');
+    if (el) el.innerHTML = list.slice(0, 6).map(function(m, i) {
+      return '<div class="volunteer-card"><div class="volunteer-icon">' + MINISTRY_ICONS[i % MINISTRY_ICONS.length] + '</div>' +
+        '<div class="volunteer-name">' + esc(m.name) + '</div></div>';
+    }).join('') || '<p class="loading">No ministries.</p>';
+  });
+}
+function loadHomeGalleries(count) {
+  apiCall('/galleries').then(function(res) {
+    var galleries = [];
+    if (res && res.data) {
+      galleries = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
+    var el = document.getElementById('home-galleries');
+    if (el) el.innerHTML = galleries.slice(0, count || 6).map(function(g) {
+      var thumb = g.cover_image ? '/storage/' + g.cover_image : (g.images && g.images[0] ? '/storage/' + g.images[0].path : '');
+      return '<div class="card" style="padding:0;overflow:hidden">' +
+        (thumb ? '<div style="height:140px;overflow:hidden"><img src="' + esc(thumb) + '" alt="' + esc(g.title) + '" style="width:100%;height:100%;object-fit:cover"></div>' : '') +
+        '<div style="padding:0.8rem"><h3 class="card-title" style="font-size:0.9rem">' + esc(g.title) + '</h3></div></div>';
+    }).join('') || '<p class="loading">No galleries.</p>';
+  });
+}
+function submitHomeNewsletter() {
+  var email = document.getElementById('home-newsletter-email').value;
+  if (!email.trim()) { showToast('Please enter your email.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('home-newsletter-email').value = '';
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Subscribed! Thank you for joining.');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed. Try again.');
+    }
+  });
+}
+function submitHomeContact() {
+  var n = document.getElementById('home-contact-name').value;
+  var e = document.getElementById('home-contact-email').value;
+  var s = document.getElementById('home-contact-subject').value;
+  var m = document.getElementById('home-contact-message').value;
+  if (!n.trim() || !e.trim() || !s.trim() || !m.trim()) { showToast('Please fill all fields.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { showToast('Please enter a valid email.'); return; }
+  apiCall('/contact', {
+    method: 'POST',
+    body: JSON.stringify({ name: n, email: e, subject: s, message: m })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('home-contact-name').value = '';
+      document.getElementById('home-contact-email').value = '';
+      document.getElementById('home-contact-subject').value = '';
+      document.getElementById('home-contact-message').value = '';
+      showToast('\u2709\uFE0F Message sent!');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed. Try again.');
+    }
+  });
+}
+
 /* ===== INIT ===== */
 buildNav();
 buildStarInput();
 buildGiving();
 updateAuthUI();
 Promise.allSettled([
+  loadWidgetConfig(),
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries()
 ]);

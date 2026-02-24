@@ -53,34 +53,101 @@
 </div>
 <!-- MAIN -->
 <main class="main-content">
-  <!-- HOME -->
+  <!-- HOME (dynamic sections rendered by JS from widget_config) -->
   <div class="page-section active" id="page-home">
-    <div class="ticker">
-      <span class="ticker-label">Announcements</span>
-      <span class="ticker-text" id="ticker-text">Welcome to our church! Check back for announcements.</span>
+    <!-- Container: JS will reorder/show/hide these based on widget_config -->
+    <div id="hw-announcements" class="home-widget">
+      <div class="ticker">
+        <span class="ticker-label">Announcements</span>
+        <span class="ticker-text" id="ticker-text">Welcome to our church! Check back for announcements.</span>
+      </div>
     </div>
-    <section class="hero-section">
-      <div class="hero-label">Verse of the Day</div>
-      <p class="verse-text" id="verse-text">"Loading..."</p>
-      <span class="verse-ref" id="verse-ref"></span>
-    </section>
-    <section class="blessing-card">
-      <h2 class="blessing-title" id="blessing-title">Today's Blessing</h2>
-      <p class="blessing-text" id="blessing-text">Loading...</p>
-      <p class="blessing-author" id="blessing-author"></p>
-    </section>
-    <div id="home-posts"></div>
-    <div class="section-header">
-      <h2 class="section-title">&#128591; Prayer Requests</h2>
-      <button class="section-action" onclick="openModal('prayer')">+ Submit Prayer</button>
+    <div id="hw-verse" class="home-widget">
+      <section class="hero-section">
+        <div class="hero-label">Verse of the Day</div>
+        <p class="verse-text" id="verse-text">"Loading..."</p>
+        <span class="verse-ref" id="verse-ref"></span>
+      </section>
     </div>
-    <div class="cards-grid" id="home-prayers"></div>
-    <div class="section-header">
-      <h2 class="section-title">&#128197; Upcoming Events</h2>
-      <button class="section-action" onclick="navigate('events')">View All</button>
+    <div id="hw-blessing" class="home-widget">
+      <section class="blessing-card">
+        <h2 class="blessing-title" id="blessing-title">Today's Blessing</h2>
+        <p class="blessing-text" id="blessing-text">Loading...</p>
+        <p class="blessing-author" id="blessing-author"></p>
+      </section>
     </div>
-    <div class="cards-grid" id="home-events"></div>
-    <div id="home-sermon"></div>
+    <div id="hw-posts" class="home-widget">
+      <div id="home-posts"></div>
+    </div>
+    <div id="hw-prayers" class="home-widget">
+      <div class="section-header">
+        <h2 class="section-title">&#128591; Prayer Requests</h2>
+        <button class="section-action" onclick="openModal('prayer')">+ Submit Prayer</button>
+      </div>
+      <div class="cards-grid" id="home-prayers"></div>
+    </div>
+    <div id="hw-events" class="home-widget">
+      <div class="section-header">
+        <h2 class="section-title">&#128197; Upcoming Events</h2>
+        <button class="section-action" onclick="navigate('events')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-events"></div>
+    </div>
+    <div id="hw-sermon" class="home-widget">
+      <div id="home-sermon"></div>
+    </div>
+    <div id="hw-testimonies" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#10013; Testimonies</h2>
+        <button class="section-action" onclick="navigate('testimonies')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-testimonies"></div>
+    </div>
+    <div id="hw-reviews" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#11088; Reviews</h2>
+        <button class="section-action" onclick="navigate('reviews')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-reviews"></div>
+    </div>
+    <div id="hw-ministries" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#129309; Ministries</h2>
+        <button class="section-action" onclick="navigate('ministries')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-ministries"></div>
+    </div>
+    <div id="hw-galleries" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#128248; Gallery</h2>
+      </div>
+      <div class="cards-grid" id="home-galleries"></div>
+    </div>
+    <div id="hw-newsletter" class="home-widget" style="display:none">
+      <section class="blessing-card" style="text-align:center">
+        <h2 class="blessing-title" style="font-size:1.4rem">&#128236; Stay Connected</h2>
+        <p class="blessing-text" style="font-size:0.95rem;margin-bottom:1rem">Subscribe to our newsletter for weekly updates, devotionals, and church news.</p>
+        <div style="display:flex;gap:0.5rem;max-width:400px;margin:0 auto">
+          <input class="form-input" id="home-newsletter-email" type="email" placeholder="Your email address" style="flex:1">
+          <button class="btn-primary" onclick="submitHomeNewsletter()" style="white-space:nowrap">Subscribe</button>
+        </div>
+      </section>
+    </div>
+    <div id="hw-contact" class="home-widget" style="display:none">
+      <section class="blessing-card">
+        <h2 class="blessing-title" style="font-size:1.4rem">&#9993;&#65039; Get in Touch</h2>
+        <p class="blessing-text" style="font-size:0.95rem;margin-bottom:1rem">Have a question? Send us a message.</p>
+        <div style="max-width:500px;margin:0 auto">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem">
+            <input class="form-input" id="home-contact-name" placeholder="Your name">
+            <input class="form-input" id="home-contact-email" type="email" placeholder="Your email">
+          </div>
+          <input class="form-input" id="home-contact-subject" placeholder="Subject" style="margin-bottom:0.5rem">
+          <textarea class="form-textarea" id="home-contact-message" placeholder="Your message..." rows="3" style="margin-bottom:0.5rem"></textarea>
+          <button class="btn-primary" onclick="submitHomeContact()">Send Message</button>
+        </div>
+      </section>
+    </div>
   </div>
   <!-- EVENTS -->
   <div class="page-section" id="page-events">

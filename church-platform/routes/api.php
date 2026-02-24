@@ -60,6 +60,7 @@ Route::get('/ministries', [MinistryController::class, 'index']);
 Route::get('/ministries/{ministry}', [MinistryController::class, 'show']);
 Route::get('/prayer-requests/public', [PrayerRequestController::class, 'publicRequests']);
 Route::get('/settings', [SettingController::class, 'show']);
+Route::get('/settings/widgets/public', [SettingController::class, 'widgetConfig']);
 
 // Announcements (public)
 Route::get('/announcements/active', [AnnouncementController::class, 'active']);
@@ -231,4 +232,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings/email', [SettingController::class, 'emailSettings']);
     Route::put('/settings/email', [SettingController::class, 'updateEmailSettings']);
     Route::post('/settings/email/test', [SettingController::class, 'testEmail']);
+
+    // Homepage Widget Config
+    Route::get('/settings/widgets', [SettingController::class, 'widgetConfig']);
+    Route::put('/settings/widgets', [SettingController::class, 'updateWidgetConfig']);
 });
