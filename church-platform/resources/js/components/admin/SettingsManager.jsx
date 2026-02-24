@@ -19,6 +19,36 @@ function SectionHeader({ icon, title, description }) {
 }
 
 export default function SettingsManager() {
+    const [activeTab, setActiveTab] = useState('general');
+
+    // Email settings state
+    const [emailForm, setEmailForm] = useState({
+        mail_provider: 'smtp',
+        smtp_host: '',
+        smtp_port: 587,
+        smtp_username: '',
+        smtp_password: '',
+        smtp_encryption: 'tls',
+        mail_from_address: '',
+        mail_from_name: '',
+        mailchimp_api_key: '',
+        mailchimp_list_id: '',
+        mailchimp_server_prefix: '',
+        sendgrid_api_key: '',
+        mailgun_domain: '',
+        mailgun_secret: '',
+        email_contact_notification: true,
+        email_contact_recipient: '',
+        email_newsletter_enabled: true,
+        email_welcome_enabled: false,
+        email_welcome_template: '',
+        email_signature: '',
+    });
+    const [emailSaving, setEmailSaving] = useState(false);
+    const [emailAlert, setEmailAlert] = useState(null);
+    const [testEmailAddress, setTestEmailAddress] = useState('');
+    const [testingSend, setTestingSend] = useState(false);
+
     const [form, setForm] = useState({
         church_name: '',
         tagline: '',
@@ -56,6 +86,7 @@ export default function SettingsManager() {
 
     useEffect(() => {
         fetchSettings();
+        fetchEmailSettings();
     }, []);
 
     const fetchSettings = async () => {
@@ -133,6 +164,57 @@ export default function SettingsManager() {
         setSaving(false);
     };
 
+    const fetchEmailSettings = async () => {
+        try {
+            const data = await get('/api/settings/email');
+            const settings = data.data || data;
+            const updated = { ...emailForm };
+            Object.keys(updated).forEach((key) => {
+                if (settings[key] !== undefined && settings[key] !== null) {
+                    updated[key] = settings[key];
+                }
+            });
+            setEmailForm(updated);
+        } catch (e) {
+            // Silently fail - email settings may not be configured yet
+        }
+    };
+
+    const handleEmailChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEmailForm({ ...emailForm, [name]: type === 'checkbox' ? checked : value });
+    };
+
+    const handleEmailSubmit = async (e) => {
+        if (e) e.preventDefault();
+        setEmailSaving(true);
+        setEmailAlert(null);
+        try {
+            await put('/api/settings/email', emailForm);
+            setEmailAlert({ type: 'success', message: 'Email settings saved successfully.' });
+            fetchEmailSettings();
+        } catch (e) {
+            setEmailAlert({ type: 'error', message: 'Failed to save email settings: ' + e.message });
+        }
+        setEmailSaving(false);
+    };
+
+    const handleTestEmail = async () => {
+        if (!testEmailAddress) {
+            setEmailAlert({ type: 'error', message: 'Please enter an email address to send a test to.' });
+            return;
+        }
+        setTestingSend(true);
+        setEmailAlert(null);
+        try {
+            const res = await post('/api/settings/email/test', { to_email: testEmailAddress });
+            setEmailAlert({ type: 'success', message: res.message || 'Test email sent successfully!' });
+        } catch (e) {
+            setEmailAlert({ type: 'error', message: 'Test email failed: ' + e.message });
+        }
+        setTestingSend(false);
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
@@ -149,6 +231,208 @@ export default function SettingsManager() {
         <div>
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Site Settings</h2>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
+                <button
+                    onClick={() => setActiveTab('general')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'general' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    General
+                </button>
+                <button
+                    onClick={() => setActiveTab('email')}
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'email' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Email Settings
+                </button>
+            </div>
+
+            {/* EMAIL SETTINGS TAB */}
+            {activeTab === 'email' && (
+                <div>
+                    <Alert {...emailAlert} onClose={() => setEmailAlert(null)} />
+
+                    {/* Mail Provider */}
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+                            title="Email Provider"
+                            description="Choose how your church sends emails"
+                        />
+                        <FormField label="Mail Provider" name="mail_provider" type="select" value={emailForm.mail_provider} onChange={handleEmailChange} options={[
+                            { value: 'smtp', label: 'SMTP (Custom Mail Server)' },
+                            { value: 'mailchimp', label: 'Mailchimp (Mandrill)' },
+                            { value: 'sendgrid', label: 'SendGrid' },
+                            { value: 'mailgun', label: 'Mailgun' },
+                        ]} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                            <FormField label="From Email Address" name="mail_from_address" type="email" value={emailForm.mail_from_address} onChange={handleEmailChange} placeholder="noreply@yourchurch.com" />
+                            <FormField label="From Name" name="mail_from_name" value={emailForm.mail_from_name} onChange={handleEmailChange} placeholder="Your Church Name" />
+                        </div>
+                    </div>
+
+                    {/* SMTP Settings */}
+                    {emailForm.mail_provider === 'smtp' && (
+                        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                            <SectionHeader
+                                icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2" /></svg>}
+                                title="SMTP Configuration"
+                                description="Configure your SMTP mail server"
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <FormField label="SMTP Host" name="smtp_host" value={emailForm.smtp_host} onChange={handleEmailChange} placeholder="smtp.gmail.com" />
+                                <div className="grid grid-cols-2 gap-x-4">
+                                    <FormField label="Port" name="smtp_port" type="number" value={emailForm.smtp_port} onChange={handleEmailChange} placeholder="587" />
+                                    <FormField label="Encryption" name="smtp_encryption" type="select" value={emailForm.smtp_encryption} onChange={handleEmailChange} options={[
+                                        { value: 'tls', label: 'TLS' },
+                                        { value: 'ssl', label: 'SSL' },
+                                        { value: 'none', label: 'None' },
+                                    ]} />
+                                </div>
+                                <FormField label="SMTP Username" name="smtp_username" value={emailForm.smtp_username} onChange={handleEmailChange} placeholder="your@email.com" />
+                                <FormField label="SMTP Password" name="smtp_password" type="password" value={emailForm.smtp_password} onChange={handleEmailChange} placeholder="Leave blank to keep current" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Mailchimp Settings */}
+                    {emailForm.mail_provider === 'mailchimp' && (
+                        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                            <SectionHeader
+                                icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                                title="Mailchimp Configuration"
+                                description="Configure Mailchimp for newsletters and transactional email (Mandrill)"
+                            />
+                            <FormField label="Mailchimp API Key" name="mailchimp_api_key" type="password" value={emailForm.mailchimp_api_key} onChange={handleEmailChange} placeholder="Leave blank to keep current" />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <FormField label="Audience/List ID" name="mailchimp_list_id" value={emailForm.mailchimp_list_id} onChange={handleEmailChange} placeholder="e.g., abc123def4" />
+                                <FormField label="Server Prefix" name="mailchimp_server_prefix" value={emailForm.mailchimp_server_prefix} onChange={handleEmailChange} placeholder="e.g., us1, us2, us21" />
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">The server prefix is in your API key after the dash (e.g., key-<strong>us21</strong>). The List ID is in Audience &rarr; Settings.</p>
+                        </div>
+                    )}
+
+                    {/* SendGrid Settings */}
+                    {emailForm.mail_provider === 'sendgrid' && (
+                        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                            <SectionHeader
+                                icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                                title="SendGrid Configuration"
+                                description="Configure SendGrid for email delivery"
+                            />
+                            <FormField label="SendGrid API Key" name="sendgrid_api_key" type="password" value={emailForm.sendgrid_api_key} onChange={handleEmailChange} placeholder="Leave blank to keep current" />
+                        </div>
+                    )}
+
+                    {/* Mailgun Settings */}
+                    {emailForm.mail_provider === 'mailgun' && (
+                        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                            <SectionHeader
+                                icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                                title="Mailgun Configuration"
+                                description="Configure Mailgun for email delivery"
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <FormField label="Mailgun Domain" name="mailgun_domain" value={emailForm.mailgun_domain} onChange={handleEmailChange} placeholder="mg.yourdomain.com" />
+                                <FormField label="Mailgun Secret" name="mailgun_secret" type="password" value={emailForm.mailgun_secret} onChange={handleEmailChange} placeholder="Leave blank to keep current" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Email Workflow Settings */}
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                            title="Email Workflows"
+                            description="Configure automated email notifications"
+                        />
+                        <div className="space-y-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="email_contact_notification" checked={emailForm.email_contact_notification} onChange={handleEmailChange} className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700">Send contact form notifications</span>
+                                    <p className="text-xs text-gray-500">Receive an email when someone submits the contact form</p>
+                                </div>
+                            </label>
+                            {emailForm.email_contact_notification && (
+                                <FormField label="Contact Notification Recipient" name="email_contact_recipient" type="email" value={emailForm.email_contact_recipient} onChange={handleEmailChange} placeholder="admin@yourchurch.com (defaults to church email)" />
+                            )}
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="email_newsletter_enabled" checked={emailForm.email_newsletter_enabled} onChange={handleEmailChange} className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700">Enable newsletter sending</span>
+                                    <p className="text-xs text-gray-500">Allow sending newsletters to subscribers</p>
+                                </div>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" name="email_welcome_enabled" checked={emailForm.email_welcome_enabled} onChange={handleEmailChange} className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500" />
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700">Send welcome email to new subscribers</span>
+                                    <p className="text-xs text-gray-500">Automatically email new newsletter subscribers</p>
+                                </div>
+                            </label>
+                            {emailForm.email_welcome_enabled && (
+                                <FormField label="Welcome Email Template" name="email_welcome_template" type="textarea" value={emailForm.email_welcome_template} onChange={handleEmailChange} rows={5} placeholder="Welcome to {church_name}!&#10;&#10;Thank you for subscribing, {name}. You'll receive updates about upcoming events, sermons, and more.&#10;&#10;Available variables: {name}, {church_name}, {email}" />
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Email Signature */}
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>}
+                            title="Email Signature"
+                            description="Appended to all outgoing emails"
+                        />
+                        <FormField label="Signature" name="email_signature" type="textarea" value={emailForm.email_signature} onChange={handleEmailChange} rows={4} placeholder="Blessings,&#10;Your Church Name&#10;123 Main St, City, State&#10;(555) 123-4567" />
+                    </div>
+
+                    {/* Test Email */}
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                            title="Test Email"
+                            description="Send a test email to verify your configuration"
+                        />
+                        <div className="flex items-end gap-3">
+                            <div className="flex-1">
+                                <FormField label="Test Recipient Email" name="test_email" type="email" value={testEmailAddress} onChange={(e) => setTestEmailAddress(e.target.value)} placeholder="admin@yourchurch.com" />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleTestEmail}
+                                disabled={testingSend}
+                                className="px-4 py-2.5 mb-4 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 whitespace-nowrap"
+                            >
+                                {testingSend ? 'Sending...' : 'Send Test Email'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Save Email Settings */}
+                    <div className="flex justify-end pb-4">
+                        <button
+                            onClick={handleEmailSubmit}
+                            disabled={emailSaving}
+                            className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {emailSaving && (
+                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            )}
+                            {emailSaving ? 'Saving...' : 'Save Email Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* GENERAL SETTINGS TAB */}
+            {activeTab === 'general' && (<div>
+            <div className="flex justify-end mb-4">
                 <button
                     onClick={handleSubmit}
                     disabled={saving}
@@ -163,7 +447,6 @@ export default function SettingsManager() {
                     {saving ? 'Saving...' : 'Save Settings'}
                 </button>
             </div>
-
             <Alert {...alert} onClose={() => setAlert(null)} />
 
             <form onSubmit={handleSubmit} className="space-y-8">
@@ -392,6 +675,7 @@ export default function SettingsManager() {
                     </button>
                 </div>
             </form>
+            </div>)}
         </div>
     );
 }

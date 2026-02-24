@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\NewsletterSubscriber;
 use App\Models\NewsletterTemplate;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class NewsletterController extends Controller
@@ -86,6 +87,16 @@ class NewsletterController extends Controller
             'subscribed_at' => now(),
         ]);
 
+        // Send welcome email and sync with Mailchimp
+        try {
+            $emailService = new EmailService();
+            $unsubscribeUrl = url('/api/newsletter/unsubscribe/' . $subscriber->token);
+            $emailService->sendWelcomeEmail($subscriber->email, $subscriber->name, $unsubscribeUrl);
+            $emailService->addToMailchimpList($subscriber->email, $subscriber->name);
+        } catch (\Exception $e) {
+            Log::warning('Newsletter post-subscribe actions failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Thank you for subscribing to our newsletter!',
@@ -118,6 +129,14 @@ class NewsletterController extends Controller
             'is_active'       => false,
             'unsubscribed_at' => now(),
         ]);
+
+        // Sync unsubscribe with Mailchimp
+        try {
+            $emailService = new EmailService();
+            $emailService->removeFromMailchimpList($subscriber->email);
+        } catch (\Exception $e) {
+            Log::warning('Mailchimp unsubscribe sync failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
@@ -220,18 +239,21 @@ class NewsletterController extends Controller
         }
 
         $sentCount = 0;
+        $emailService = new EmailService();
 
         foreach ($subscribers as $subscriber) {
             try {
                 $unsubscribeUrl = url('/api/newsletter/unsubscribe/' . $subscriber->token);
-                $bodyWithUnsubscribe = $template->body . "\n\n---\nTo unsubscribe, visit: " . $unsubscribeUrl;
-
-                Mail::raw($bodyWithUnsubscribe, function ($mail) use ($subscriber, $template) {
-                    $mail->to($subscriber->email, $subscriber->name)
-                         ->subject($template->subject);
-                });
+                $emailService->sendNewsletter(
+                    $subscriber->email,
+                    $subscriber->name,
+                    $template->subject,
+                    $template->body,
+                    $unsubscribeUrl
+                );
                 $sentCount++;
             } catch (\Exception $e) {
+                Log::warning('Failed to send newsletter to ' . $subscriber->email . ': ' . $e->getMessage());
                 continue;
             }
         }

@@ -226,4 +226,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Settings
     Route::put('/settings', [SettingController::class, 'update']);
+
+    // Email Settings
+    Route::get('/settings/email', [SettingController::class, 'emailSettings']);
+    Route::put('/settings/email', [SettingController::class, 'updateEmailSettings']);
+    Route::post('/settings/email/test', [SettingController::class, 'testEmail']);
 });

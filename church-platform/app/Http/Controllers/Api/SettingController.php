@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -123,5 +124,107 @@ class SettingController extends Controller
             'message' => $message,
             'data'    => $setting->fresh(),
         ]);
+    }
+
+    /**
+     * Get email settings (admin only, returns masked secrets).
+     */
+    public function emailSettings(): JsonResponse
+    {
+        $setting = Setting::first();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $setting ? $setting->getEmailSettings() : [
+                'mail_provider' => 'smtp',
+                'smtp_port' => 587,
+                'smtp_encryption' => 'tls',
+                'email_contact_notification' => true,
+                'email_newsletter_enabled' => true,
+                'email_welcome_enabled' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * Update email settings.
+     */
+    public function updateEmailSettings(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'mail_provider'              => 'required|string|in:smtp,mailchimp,sendgrid,mailgun',
+            'smtp_host'                  => 'nullable|string|max:255',
+            'smtp_port'                  => 'nullable|integer|min:1|max:65535',
+            'smtp_username'              => 'nullable|string|max:255',
+            'smtp_password'              => 'nullable|string|max:500',
+            'smtp_encryption'            => 'nullable|string|in:tls,ssl,none',
+            'mail_from_address'          => 'nullable|email|max:255',
+            'mail_from_name'             => 'nullable|string|max:255',
+            'mailchimp_api_key'          => 'nullable|string|max:500',
+            'mailchimp_list_id'          => 'nullable|string|max:255',
+            'mailchimp_server_prefix'    => 'nullable|string|max:20',
+            'sendgrid_api_key'           => 'nullable|string|max:500',
+            'mailgun_domain'             => 'nullable|string|max:255',
+            'mailgun_secret'             => 'nullable|string|max:500',
+            'email_contact_notification' => 'boolean',
+            'email_contact_recipient'    => 'nullable|email|max:255',
+            'email_newsletter_enabled'   => 'boolean',
+            'email_welcome_enabled'      => 'boolean',
+            'email_welcome_template'     => 'nullable|string|max:10000',
+            'email_signature'            => 'nullable|string|max:2000',
+        ]);
+
+        $setting = Setting::first();
+
+        // Don't overwrite secrets if placeholder values sent
+        if (isset($validated['smtp_password']) && empty($validated['smtp_password'])) {
+            unset($validated['smtp_password']);
+        }
+        if (isset($validated['mailchimp_api_key']) && empty($validated['mailchimp_api_key'])) {
+            unset($validated['mailchimp_api_key']);
+        }
+        if (isset($validated['sendgrid_api_key']) && empty($validated['sendgrid_api_key'])) {
+            unset($validated['sendgrid_api_key']);
+        }
+        if (isset($validated['mailgun_secret']) && empty($validated['mailgun_secret'])) {
+            unset($validated['mailgun_secret']);
+        }
+
+        if ($setting) {
+            $setting->update($validated);
+        } else {
+            $setting = Setting::create($validated);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email settings updated successfully.',
+            'data'    => $setting->fresh()->getEmailSettings(),
+        ]);
+    }
+
+    /**
+     * Send a test email to verify email configuration.
+     */
+    public function testEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'to_email' => 'required|email|max:255',
+        ]);
+
+        try {
+            $emailService = new EmailService();
+            $emailService->sendTestEmail($validated['to_email']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent successfully to ' . $validated['to_email'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send test email: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
