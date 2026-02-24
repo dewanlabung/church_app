@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SermonController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SitemapController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\TestimonyController;
 use App\Http\Controllers\Api\VerseController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -49,12 +51,16 @@ Route::get('/books/{book}/download', [BookController::class, 'download']);
 Route::get('/bible-studies/featured', [BibleStudyController::class, 'featured']);
 Route::get('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'show']);
 Route::get('/reviews/approved', [ReviewController::class, 'approved']);
+Route::get('/testimonies/approved', [TestimonyController::class, 'approved']);
+Route::get('/testimonies/featured', [TestimonyController::class, 'featured']);
+Route::get('/testimonies/{slug}', [TestimonyController::class, 'show']);
 Route::get('/galleries', [GalleryController::class, 'index']);
 Route::get('/galleries/{gallery}', [GalleryController::class, 'show']);
 Route::get('/ministries', [MinistryController::class, 'index']);
 Route::get('/ministries/{ministry}', [MinistryController::class, 'show']);
 Route::get('/prayer-requests/public', [PrayerRequestController::class, 'publicRequests']);
 Route::get('/settings', [SettingController::class, 'show']);
+Route::get('/settings/widgets/public', [SettingController::class, 'widgetConfig']);
 
 // Announcements (public)
 Route::get('/announcements/active', [AnnouncementController::class, 'active']);
@@ -78,6 +84,7 @@ Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe']);
 Route::post('/prayer-requests', [PrayerRequestController::class, 'store']);
 Route::post('/reviews', [ReviewController::class, 'store']);
+Route::post('/testimonies', [TestimonyController::class, 'store']);
 Route::post('/events/{event}/register', [EventController::class, 'register']);
 Route::post('/prayer-requests/{prayerRequest}/pray', [PrayerRequestController::class, 'pray']);
 
@@ -142,6 +149,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'update']);
     Route::delete('/bible-studies/{bibleStudy}', [BibleStudyController::class, 'destroy']);
 
+    // Testimonies Admin
+    Route::get('/testimonies', [TestimonyController::class, 'index']);
+    Route::put('/testimonies/{testimony}', [TestimonyController::class, 'update']);
+    Route::patch('/testimonies/{testimony}/status', [TestimonyController::class, 'updateStatus']);
+    Route::delete('/testimonies/{testimony}', [TestimonyController::class, 'destroy']);
+
     // Reviews Admin
     Route::get('/reviews', [ReviewController::class, 'index']);
     Route::patch('/reviews/{review}/approve', [ReviewController::class, 'approve']);
@@ -168,6 +181,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Newsletter Admin
     Route::get('/newsletter/subscribers', [NewsletterController::class, 'subscribers']);
+    Route::get('/newsletter/subscribers/export', [NewsletterController::class, 'exportSubscribers']);
+    Route::get('/newsletter/templates', [NewsletterController::class, 'templates']);
+    Route::post('/newsletter/templates', [NewsletterController::class, 'storeTemplate']);
+    Route::put('/newsletter/templates/{template}', [NewsletterController::class, 'updateTemplate']);
+    Route::delete('/newsletter/templates/{template}', [NewsletterController::class, 'destroyTemplate']);
+    Route::post('/newsletter/templates/{template}/send', [NewsletterController::class, 'sendTemplate']);
 
     // Announcements CRUD
     Route::get('/announcements', [AnnouncementController::class, 'index']);
@@ -200,6 +219,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/roles/{role}', [RoleController::class, 'destroy']);
     Route::post('/roles/assign', [RoleController::class, 'assignRole']);
 
+    // Users CRUD
+    Route::get('/users', [UserController::class, 'index']);
+    Route::post('/users', [UserController::class, 'store']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+
     // Settings
     Route::put('/settings', [SettingController::class, 'update']);
+
+    // Email Settings
+    Route::get('/settings/email', [SettingController::class, 'emailSettings']);
+    Route::put('/settings/email', [SettingController::class, 'updateEmailSettings']);
+    Route::post('/settings/email/test', [SettingController::class, 'testEmail']);
+
+    // Homepage Widget Config
+    Route::get('/settings/widgets', [SettingController::class, 'widgetConfig']);
+    Route::put('/settings/widgets', [SettingController::class, 'updateWidgetConfig']);
 });

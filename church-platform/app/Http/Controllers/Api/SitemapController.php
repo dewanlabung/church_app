@@ -8,7 +8,9 @@ use App\Models\Sermon;
 use App\Models\Book;
 use App\Models\BibleStudy;
 use App\Models\Event;
+use App\Models\Gallery;
 use App\Models\Ministry;
+use App\Models\Testimony;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
@@ -21,6 +23,12 @@ class SitemapController extends Controller
 
         // Homepage
         $xml .= $this->urlEntry($baseUrl, now()->toDateString(), 'daily', '1.0');
+
+        // Static pages
+        $staticPages = ['events', 'prayers', 'library', 'studies', 'sermons', 'giving', 'ministries', 'reviews', 'testimonies', 'contact', 'about'];
+        foreach ($staticPages as $page) {
+            $xml .= $this->urlEntry($baseUrl . '/#' . $page, now()->toDateString(), 'weekly', '0.5');
+        }
 
         // Posts
         $posts = Post::where('status', 'published')->get();
@@ -48,10 +56,36 @@ class SitemapController extends Controller
             $xml .= $this->urlEntry($baseUrl . '/event/' . $event->slug, $event->updated_at->toDateString(), 'weekly', '0.6');
         }
 
+        // Books
+        $books = Book::where('is_active', true)->get();
+        foreach ($books as $book) {
+            $xml .= $this->urlEntry($baseUrl . '/book/' . $book->slug, $book->updated_at->toDateString(), 'monthly', '0.6');
+        }
+
+        // Bible Studies
+        $studies = BibleStudy::where('is_active', true)->get();
+        foreach ($studies as $study) {
+            $xml .= $this->urlEntry($baseUrl . '/bible-study/' . $study->slug, $study->updated_at->toDateString(), 'monthly', '0.6');
+        }
+
         // Ministries
         $ministries = Ministry::where('is_active', true)->get();
         foreach ($ministries as $ministry) {
             $xml .= $this->urlEntry($baseUrl . '/ministry/' . $ministry->slug, $ministry->updated_at->toDateString(), 'monthly', '0.5');
+        }
+
+        // Testimonies
+        $testimonies = Testimony::whereIn('status', ['approved', 'featured'])->get();
+        foreach ($testimonies as $testimony) {
+            $xml .= $this->urlEntry($baseUrl . '/testimony/' . $testimony->slug, $testimony->updated_at->toDateString(), 'monthly', '0.6');
+        }
+
+        // Galleries
+        if (class_exists(Gallery::class)) {
+            $galleries = Gallery::where('is_active', true)->get();
+            foreach ($galleries as $gallery) {
+                $xml .= $this->urlEntry($baseUrl . '/gallery/' . ($gallery->slug ?? $gallery->id), $gallery->updated_at->toDateString(), 'monthly', '0.5');
+            }
         }
 
         $xml .= '</urlset>';

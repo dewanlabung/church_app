@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\NewsletterSubscriber;
+use App\Models\NewsletterTemplate;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class NewsletterController extends Controller
@@ -84,6 +87,16 @@ class NewsletterController extends Controller
             'subscribed_at' => now(),
         ]);
 
+        // Send welcome email and sync with Mailchimp
+        try {
+            $emailService = new EmailService();
+            $unsubscribeUrl = url('/api/newsletter/unsubscribe/' . $subscriber->token);
+            $emailService->sendWelcomeEmail($subscriber->email, $subscriber->name, $unsubscribeUrl);
+            $emailService->addToMailchimpList($subscriber->email, $subscriber->name);
+        } catch (\Exception $e) {
+            Log::warning('Newsletter post-subscribe actions failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Thank you for subscribing to our newsletter!',
@@ -117,9 +130,164 @@ class NewsletterController extends Controller
             'unsubscribed_at' => now(),
         ]);
 
+        // Sync unsubscribe with Mailchimp
+        try {
+            $emailService = new EmailService();
+            $emailService->removeFromMailchimpList($subscriber->email);
+        } catch (\Exception $e) {
+            Log::warning('Mailchimp unsubscribe sync failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'You have been successfully unsubscribed from our newsletter.',
+        ]);
+    }
+
+    /**
+     * List newsletter templates (admin).
+     */
+    public function templates(Request $request): JsonResponse
+    {
+        $query = NewsletterTemplate::query()->latest();
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('subject', 'like', "%{$search}%");
+            });
+        }
+
+        $templates = $query->paginate($request->get('per_page', 15));
+
+        return response()->json([
+            'success' => true,
+            'data'    => $templates,
+        ]);
+    }
+
+    /**
+     * Store a new newsletter template.
+     */
+    public function storeTemplate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:255',
+            'subject' => 'required|string|max:255',
+            'body'    => 'required|string',
+            'type'    => 'nullable|string|max:50',
+        ]);
+
+        $validated['created_by'] = $request->user()?->id;
+
+        $template = NewsletterTemplate::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template created successfully.',
+            'data'    => $template,
+        ], 201);
+    }
+
+    /**
+     * Update a newsletter template.
+     */
+    public function updateTemplate(Request $request, NewsletterTemplate $template): JsonResponse
+    {
+        $validated = $request->validate([
+            'name'    => 'required|string|max:255',
+            'subject' => 'required|string|max:255',
+            'body'    => 'required|string',
+            'type'    => 'nullable|string|max:50',
+        ]);
+
+        $template->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template updated successfully.',
+            'data'    => $template->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete a newsletter template.
+     */
+    public function destroyTemplate(NewsletterTemplate $template): JsonResponse
+    {
+        $template->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Template deleted successfully.',
+        ]);
+    }
+
+    /**
+     * Send a newsletter template to all active subscribers.
+     */
+    public function sendTemplate(NewsletterTemplate $template): JsonResponse
+    {
+        $subscribers = NewsletterSubscriber::where('is_active', true)->get();
+
+        if ($subscribers->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active subscribers to send to.',
+            ], 400);
+        }
+
+        $sentCount = 0;
+        $emailService = new EmailService();
+
+        foreach ($subscribers as $subscriber) {
+            try {
+                $unsubscribeUrl = url('/api/newsletter/unsubscribe/' . $subscriber->token);
+                $emailService->sendNewsletter(
+                    $subscriber->email,
+                    $subscriber->name,
+                    $template->subject,
+                    $template->body,
+                    $unsubscribeUrl
+                );
+                $sentCount++;
+            } catch (\Exception $e) {
+                Log::warning('Failed to send newsletter to ' . $subscriber->email . ': ' . $e->getMessage());
+                continue;
+            }
+        }
+
+        $template->update([
+            'sent_at'          => now(),
+            'recipients_count' => $sentCount,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Newsletter sent to {$sentCount} subscriber(s).",
+            'data'    => $template->fresh(),
+        ]);
+    }
+
+    /**
+     * Export subscriber list as CSV.
+     */
+    public function exportSubscribers(): \Illuminate\Http\Response
+    {
+        $subscribers = NewsletterSubscriber::where('is_active', true)
+            ->orderBy('created_at', 'desc')
+            ->get(['email', 'name', 'subscribed_at', 'created_at']);
+
+        $csv = "Email,Name,Subscribed Date\n";
+        foreach ($subscribers as $sub) {
+            $date = $sub->subscribed_at ? $sub->subscribed_at->toDateString() : ($sub->created_at ? $sub->created_at->toDateString() : '');
+            $csv .= '"' . str_replace('"', '""', $sub->email) . '","' . str_replace('"', '""', $sub->name ?? '') . '","' . $date . "\"\n";
+        }
+
+        return response($csv, 200, [
+            'Content-Type'        => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="newsletter-subscribers.csv"',
         ]);
     }
 }

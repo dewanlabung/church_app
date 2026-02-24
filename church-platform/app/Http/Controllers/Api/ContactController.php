@@ -4,9 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ContactMessage;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -62,6 +63,14 @@ class ContactController extends Controller
 
         $contact = ContactMessage::create($validated);
 
+        // Send notification email to admin using EmailService
+        try {
+            $emailService = new EmailService();
+            $emailService->sendContactNotification($validated);
+        } catch (\Exception $e) {
+            Log::warning('Failed to send contact notification email: ' . $e->getMessage());
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Your message has been sent successfully. We will get back to you soon.',
@@ -109,12 +118,15 @@ class ContactController extends Controller
 
         $replySubject = $validated['reply_subject'] ?? 'Re: ' . $contactMessage->subject;
 
-        // Attempt to send the reply email
+        // Send reply using EmailService
         try {
-            Mail::raw($validated['reply_message'], function ($mail) use ($contactMessage, $replySubject) {
-                $mail->to($contactMessage->email, $contactMessage->name)
-                     ->subject($replySubject);
-            });
+            $emailService = new EmailService();
+            $emailService->send(
+                $contactMessage->email,
+                $replySubject,
+                $validated['reply_message'],
+                $contactMessage->name
+            );
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

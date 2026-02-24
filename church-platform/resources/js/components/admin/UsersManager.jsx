@@ -105,24 +105,7 @@ export default function UsersManager() {
 
             <Alert {...alert} onClose={() => setAlert(null)} />
 
-            {/* Placeholder notice */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-6">
-                <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-semibold text-amber-800">User management coming soon</h3>
-                        <p className="mt-1 text-sm text-amber-700">
-                            Full user management capabilities including role assignments, account status controls, and bulk operations are currently under development. Stay tuned for updates.
-                        </p>
-                    </div>
-                </div>
-            </div>
 
-            {/* Data table with empty state */}
             <div className="bg-white rounded-xl shadow-sm border">
                 {loading ? (
                     <div className="flex items-center justify-center py-16">

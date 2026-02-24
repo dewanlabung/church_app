@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
+use App\Services\EmailService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -122,6 +123,171 @@ class SettingController extends Controller
             'success' => true,
             'message' => $message,
             'data'    => $setting->fresh(),
+        ]);
+    }
+
+    /**
+     * Get email settings (admin only, returns masked secrets).
+     */
+    public function emailSettings(): JsonResponse
+    {
+        $setting = Setting::first();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $setting ? $setting->getEmailSettings() : [
+                'mail_provider' => 'smtp',
+                'smtp_port' => 587,
+                'smtp_encryption' => 'tls',
+                'email_contact_notification' => true,
+                'email_newsletter_enabled' => true,
+                'email_welcome_enabled' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * Update email settings.
+     */
+    public function updateEmailSettings(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'mail_provider'              => 'required|string|in:smtp,mailchimp,sendgrid,mailgun',
+            'smtp_host'                  => 'nullable|string|max:255',
+            'smtp_port'                  => 'nullable|integer|min:1|max:65535',
+            'smtp_username'              => 'nullable|string|max:255',
+            'smtp_password'              => 'nullable|string|max:500',
+            'smtp_encryption'            => 'nullable|string|in:tls,ssl,none',
+            'mail_from_address'          => 'nullable|email|max:255',
+            'mail_from_name'             => 'nullable|string|max:255',
+            'mailchimp_api_key'          => 'nullable|string|max:500',
+            'mailchimp_list_id'          => 'nullable|string|max:255',
+            'mailchimp_server_prefix'    => 'nullable|string|max:20',
+            'sendgrid_api_key'           => 'nullable|string|max:500',
+            'mailgun_domain'             => 'nullable|string|max:255',
+            'mailgun_secret'             => 'nullable|string|max:500',
+            'email_contact_notification' => 'boolean',
+            'email_contact_recipient'    => 'nullable|email|max:255',
+            'email_newsletter_enabled'   => 'boolean',
+            'email_welcome_enabled'      => 'boolean',
+            'email_welcome_template'     => 'nullable|string|max:10000',
+            'email_signature'            => 'nullable|string|max:2000',
+        ]);
+
+        $setting = Setting::first();
+
+        // Don't overwrite secrets if placeholder values sent
+        if (isset($validated['smtp_password']) && empty($validated['smtp_password'])) {
+            unset($validated['smtp_password']);
+        }
+        if (isset($validated['mailchimp_api_key']) && empty($validated['mailchimp_api_key'])) {
+            unset($validated['mailchimp_api_key']);
+        }
+        if (isset($validated['sendgrid_api_key']) && empty($validated['sendgrid_api_key'])) {
+            unset($validated['sendgrid_api_key']);
+        }
+        if (isset($validated['mailgun_secret']) && empty($validated['mailgun_secret'])) {
+            unset($validated['mailgun_secret']);
+        }
+
+        if ($setting) {
+            $setting->update($validated);
+        } else {
+            $setting = Setting::create($validated);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email settings updated successfully.',
+            'data'    => $setting->fresh()->getEmailSettings(),
+        ]);
+    }
+
+    /**
+     * Send a test email to verify email configuration.
+     */
+    public function testEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'to_email' => 'required|email|max:255',
+        ]);
+
+        try {
+            $emailService = new EmailService();
+            $emailService->sendTestEmail($validated['to_email']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Test email sent successfully to ' . $validated['to_email'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send test email: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Get homepage widget configuration.
+     */
+    public function widgetConfig(): JsonResponse
+    {
+        $setting = Setting::first();
+
+        $defaultWidgets = [
+            ['id' => 'announcements', 'label' => 'Announcements Ticker', 'icon' => 'fa-bullhorn', 'enabled' => true, 'settings' => []],
+            ['id' => 'verse', 'label' => 'Verse of the Day', 'icon' => 'fa-book-bible', 'enabled' => true, 'settings' => []],
+            ['id' => 'blessing', 'label' => "Today's Blessing", 'icon' => 'fa-hand-holding-heart', 'enabled' => true, 'settings' => []],
+            ['id' => 'posts', 'label' => 'Latest Posts / News', 'icon' => 'fa-newspaper', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'prayers', 'label' => 'Prayer Requests', 'icon' => 'fa-praying-hands', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'events', 'label' => 'Upcoming Events', 'icon' => 'fa-calendar-alt', 'enabled' => true, 'settings' => ['count' => 3]],
+            ['id' => 'sermon', 'label' => 'Latest Sermon', 'icon' => 'fa-microphone-alt', 'enabled' => true, 'settings' => []],
+            ['id' => 'testimonies', 'label' => 'Testimonies', 'icon' => 'fa-cross', 'enabled' => false, 'settings' => ['count' => 3]],
+            ['id' => 'reviews', 'label' => 'Reviews', 'icon' => 'fa-star', 'enabled' => false, 'settings' => ['count' => 3]],
+            ['id' => 'ministries', 'label' => 'Ministries', 'icon' => 'fa-hands-helping', 'enabled' => false, 'settings' => []],
+            ['id' => 'galleries', 'label' => 'Photo Gallery', 'icon' => 'fa-images', 'enabled' => false, 'settings' => ['count' => 6]],
+            ['id' => 'newsletter', 'label' => 'Newsletter Signup', 'icon' => 'fa-mail-bulk', 'enabled' => false, 'settings' => []],
+            ['id' => 'contact', 'label' => 'Quick Contact', 'icon' => 'fa-envelope', 'enabled' => false, 'settings' => []],
+        ];
+
+        $config = $setting && $setting->widget_config ? $setting->widget_config : $defaultWidgets;
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'widgets' => $config,
+                'available_widgets' => $defaultWidgets,
+            ],
+        ]);
+    }
+
+    /**
+     * Save homepage widget configuration.
+     */
+    public function updateWidgetConfig(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'widgets'            => 'required|array',
+            'widgets.*.id'       => 'required|string',
+            'widgets.*.label'    => 'required|string',
+            'widgets.*.icon'     => 'required|string',
+            'widgets.*.enabled'  => 'required|boolean',
+            'widgets.*.settings' => 'nullable|array',
+        ]);
+
+        $setting = Setting::first();
+
+        if ($setting) {
+            $setting->update(['widget_config' => $validated['widgets']]);
+        } else {
+            $setting = Setting::create(['widget_config' => $validated['widgets']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Homepage layout saved successfully.',
+            'data'    => $setting->fresh()->widget_config,
         ]);
     }
 }

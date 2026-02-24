@@ -1,8 +1,8 @@
 <script>
 var API = '/api';
-var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','about'];
-var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',about:'About'};
-var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',about:'\u26EA'};
+var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','contact','about'];
+var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',contact:'Contact',about:'About'};
+var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',contact:'\u2709\uFE0F',about:'\u26EA'};
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
@@ -12,6 +12,7 @@ var selectedGiving = null;
 var allBooks = [];
 var bookFilter = 'All';
 var churchSettings = {};
+var widgetConfig = null;
 
 /* ===== THEME TOGGLE ===== */
 function getTheme() {
@@ -117,7 +118,7 @@ function prayerCard(p) {
   var prayed = prayedIds[p.id];
   return '<div class="card"><div class="prayer-name">' + esc(p.name) + '</div>' +
     (p.subject ? '<div style="font-size:0.85rem;color:var(--gold);margin-bottom:0.3rem;font-weight:600">' + esc(p.subject) + '</div>' : '') +
-    '<div class="prayer-text">' + esc(p.description) + '</div>' +
+    '<div class="prayer-text">' + esc(p.description || p.request) + '</div>' +
     '<div class="prayer-footer"><span class="prayer-date">' + fmtDate(p.created_at) + '</span>' +
     '<button class="pray-btn ' + (prayed ? 'prayed' : '') + '" onclick="doPray(' + p.id + ')">\uD83D\uDE4F ' + (p.prayer_count || 0) + ' ' + (prayed ? 'Prayed' : 'Pray') + '</button></div></div>';
 }
@@ -133,7 +134,7 @@ function bookCard(b, i) {
     '<div class="book-author">' + esc(b.author) + '</div>' +
     (b.category ? '<span class="book-category">' + esc(b.category) + '</span>' : '') +
     (b.pages ? '<div class="card-desc">' + b.pages + ' pages</div>' : '') +
-    '<div class="book-actions"><button class="book-btn">\uD83D\uDCD6 Read</button>' +
+    '<div class="book-actions">' + (b.pdf_file ? '<button class="book-btn" onclick="openPdfViewer(\'/storage/' + esc(b.pdf_file) + '\', \'' + esc(b.title).replace(/'/g, "\\'") + '\')">\uD83D\uDCD6 Read</button>' : '<button class="book-btn" disabled>\uD83D\uDCD6 Read</button>') +
     (b.pdf_file ? '<button class="book-btn book-btn-pdf" onclick="downloadBook(' + b.id + ')">\uD83D\uDCE5 PDF</button>' : '') +
     '</div></div></div>';
 }
@@ -184,7 +185,7 @@ function submitPrayer() {
     method: 'POST',
     body: JSON.stringify({ name: isAnon ? 'Anonymous' : (name || 'Church Member'), subject: subject, description: desc, is_public: isPublic })
   }).then(function(res) {
-    if (res) {
+    if (res && res.prayer_request) {
       closeModal('prayer');
       document.getElementById('prayer-name').value = '';
       document.getElementById('prayer-subject').value = '';
@@ -193,6 +194,8 @@ function submitPrayer() {
       document.getElementById('prayer-public').checked = true;
       showToast('\uD83D\uDE4F Prayer request submitted. We\'re praying with you.');
       loadPrayers();
+    } else {
+      showToast('Failed to submit prayer request. Please try again.');
     }
   });
 }
@@ -206,7 +209,7 @@ function submitReview() {
     method: 'POST',
     body: JSON.stringify({ name: name, email: email, rating: selectedRating, title: title, content: text })
   }).then(function(res) {
-    if (res) {
+    if (res && res.success) {
       closeModal('review');
       document.getElementById('review-name').value = '';
       document.getElementById('review-email').value = '';
@@ -215,6 +218,8 @@ function submitReview() {
       selectedRating = 0; buildStarInput();
       showToast('\u2B50 Thank you for your review! It will appear once approved.');
       loadReviews();
+    } else {
+      showToast('Failed to submit review. Please try again.');
     }
   });
 }
@@ -370,6 +375,7 @@ function loadChurchSettings() {
       '<h2 class="blessing-title" style="font-size:1.8rem">' + esc(name) + '</h2>' +
       (s.tagline ? '<p style="color:var(--gold);font-style:italic;margin-bottom:0.5rem">' + esc(s.tagline) + '</p>' : '') +
       '<p class="blessing-text" style="font-size:1.05rem">' + esc(desc) + '</p>';
+    populateContactInfo();
     document.getElementById('about-info').innerHTML =
       '<div class="info-card"><h3 class="info-card-title">\u26EA Service Times</h3><div class="info-card-text">' + esc(s.service_times || '') + '</div></div>' +
       '<div class="info-card"><h3 class="info-card-title">\uD83D\uDCCD Location</h3><p class="info-card-text">' + esc(addr) + '</p>' +
@@ -410,6 +416,163 @@ function selectGiving(amount, btn) {
   btn.classList.add('selected');
   document.getElementById('custom-amount').value = '';
 }
+
+/* ===== TESTIMONIES ===== */
+function testimonyCard(t) {
+  return '<div class="card testimony-card" onclick="viewTestimony(\'' + esc(t.slug) + '\')" style="cursor:pointer">' +
+    (t.featured_image ? '<div style="margin:-1.4rem -1.4rem 1rem;border-radius:var(--radius-lg) var(--radius-lg) 0 0;overflow:hidden;height:160px"><img src="/storage/' + esc(t.featured_image) + '" alt="' + esc(t.name) + '" style="width:100%;height:100%;object-fit:cover"></div>' : '') +
+    '<div class="prayer-name" style="display:flex;align-items:center;gap:8px">\u271D ' + esc(t.name) + '</div>' +
+    (t.born_again_date ? '<p class="card-meta">\uD83D\uDD25 Born Again: ' + fmtDate(t.born_again_date) + '</p>' : '') +
+    (t.baptism_date ? '<p class="card-meta">\uD83D\uDCA7 Baptized: ' + fmtDate(t.baptism_date) + '</p>' : '') +
+    '<p class="card-desc" style="margin-top:0.6rem">\u201C' + esc(t.excerpt || (t.testimony || '').substring(0, 150)) + '...\u201D</p>' +
+    '<div class="prayer-footer" style="margin-top:0.8rem"><span class="prayer-date">' + fmtDate(t.published_at || t.created_at) + '</span>' +
+    '<span style="font-size:0.78rem;color:var(--text-muted)">\uD83D\uDC41 ' + (t.view_count || 0) + ' views</span></div></div>';
+}
+function loadTestimonies() {
+  return apiCall('/testimonies/approved').then(function(res) {
+    var testimonies = (res && res.data) ? res.data : [];
+    document.getElementById('all-testimonies').innerHTML = testimonies.map(testimonyCard).join('') || '<p class="loading">No testimonies shared yet. Be the first!</p>';
+  });
+}
+function viewTestimony(slug) {
+  apiCall('/testimonies/' + slug).then(function(res) {
+    if (res && res.success && res.data) {
+      var t = res.data;
+      var html = '<div class="modal-content" style="max-width:640px">' +
+        '<div class="modal-title">\u271D ' + esc(t.name) + '\'s Testimony <button class="modal-close" onclick="closeModal(\'testimony-view\')">\u2715</button></div>' +
+        (t.featured_image ? '<div style="margin-bottom:1rem;border-radius:var(--radius-md);overflow:hidden"><img src="/storage/' + esc(t.featured_image) + '" alt="' + esc(t.name) + '" style="width:100%;max-height:250px;object-fit:cover"></div>' : '') +
+        '<div style="display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap">' +
+        (t.born_again_date ? '<div style="font-size:0.85rem;color:var(--text-secondary)"><strong style="color:var(--gold)">\uD83D\uDD25 Born Again:</strong> ' + fmtDate(t.born_again_date) + '</div>' : '') +
+        (t.baptism_date ? '<div style="font-size:0.85rem;color:var(--text-secondary)"><strong style="color:var(--gold)">\uD83D\uDCA7 Baptized:</strong> ' + fmtDate(t.baptism_date) + '</div>' : '') +
+        '</div>' +
+        '<div style="font-family:var(--font-elegant);font-size:1.05rem;line-height:1.8;color:var(--text-primary);white-space:pre-wrap">' + esc(t.testimony) + '</div>' +
+        '<div style="margin-top:1.2rem;padding-top:0.8rem;border-top:1px solid var(--border);font-size:0.82rem;color:var(--text-muted);display:flex;justify-content:space-between">' +
+        '<span>' + fmtDate(t.published_at || t.created_at) + '</span>' +
+        '<span>\uD83D\uDC41 ' + (t.view_count || 0) + ' views</span></div></div>';
+      // Create a dynamic view modal
+      var overlay = document.getElementById('modal-testimony-view');
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.id = 'modal-testimony-view';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) closeModal('testimony-view'); });
+        document.body.appendChild(overlay);
+      }
+      overlay.innerHTML = html;
+      openModal('testimony-view');
+    }
+  });
+}
+function submitTestimony() {
+  var name = document.getElementById('testimony-name').value;
+  var bornAgain = document.getElementById('testimony-born-again').value;
+  var baptism = document.getElementById('testimony-baptism').value;
+  var text = document.getElementById('testimony-text').value;
+  if (!name.trim() || !text.trim()) { showToast('Please enter your name and testimony.'); return; }
+  if (text.trim().length < 20) { showToast('Please write at least 20 characters for your testimony.'); return; }
+  apiCall('/testimonies', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, born_again_date: bornAgain || null, baptism_date: baptism || null, testimony: text })
+  }).then(function(res) {
+    if (res && res.success) {
+      closeModal('testimony');
+      document.getElementById('testimony-name').value = '';
+      document.getElementById('testimony-born-again').value = '';
+      document.getElementById('testimony-baptism').value = '';
+      document.getElementById('testimony-text').value = '';
+      showToast('\u271D Thank you for sharing your testimony! It will appear after approval.');
+      loadTestimonies();
+    } else {
+      showToast(res && res.message ? res.message : 'Failed to submit testimony. Please try again.');
+    }
+  });
+}
+
+/* ===== CONTACT FORM ===== */
+function submitContact() {
+  var name = document.getElementById('contact-name').value;
+  var email = document.getElementById('contact-email').value;
+  var phone = document.getElementById('contact-phone').value;
+  var subject = document.getElementById('contact-subject').value;
+  var message = document.getElementById('contact-message').value;
+  if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+    showToast('Please fill in all required fields.'); return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/contact', {
+    method: 'POST',
+    body: JSON.stringify({ name: name, email: email, phone: phone || null, subject: subject, message: message })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('contact-name').value = '';
+      document.getElementById('contact-email').value = '';
+      document.getElementById('contact-phone').value = '';
+      document.getElementById('contact-subject').value = '';
+      document.getElementById('contact-message').value = '';
+      showToast('\u2709\uFE0F Message sent! We will get back to you soon.');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed to send message. Please try again.');
+    }
+  });
+}
+function populateContactInfo() {
+  var s = churchSettings;
+  var addr = s.address || s.church_address || 'Address not available';
+  var city = s.city ? s.city + (s.state ? ', ' + s.state : '') + (s.zip_code ? ' ' + s.zip_code : '') : '';
+  document.getElementById('contact-address').textContent = addr + (city ? '\n' + city : '');
+  document.getElementById('contact-phone-info').textContent = s.phone || s.church_phone || 'Phone not available';
+  document.getElementById('contact-email-info').textContent = s.email || s.church_email || 'Email not available';
+  document.getElementById('contact-service-times').textContent = s.service_times || 'Check our About page for details';
+}
+
+/* ===== NEWSLETTER ===== */
+var newsletterDismissed = false;
+function showNewsletterPopup() {
+  if (newsletterDismissed || sessionStorage.getItem('newsletter-dismissed') || localStorage.getItem('newsletter-subscribed')) return;
+  document.getElementById('newsletter-popup').classList.add('show');
+}
+function closeNewsletterPopup() {
+  document.getElementById('newsletter-popup').classList.remove('show');
+  newsletterDismissed = true;
+  sessionStorage.setItem('newsletter-dismissed', '1');
+}
+function submitNewsletter() {
+  var email = document.getElementById('newsletter-email').value;
+  var name = document.getElementById('newsletter-name').value;
+  if (!email.trim()) { showToast('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, name: name || null })
+  }).then(function(res) {
+    if (res && res.success) {
+      closeNewsletterPopup();
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Thank you for subscribing! Check your inbox soon.');
+    } else {
+      showToast(res && res.message ? res.message : 'Subscription failed. Please try again.');
+    }
+  });
+}
+function submitFooterNewsletter() {
+  var email = document.getElementById('newsletter-footer-email').value;
+  if (!email.trim()) { showToast('Please enter your email address.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('newsletter-footer-email').value = '';
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Subscribed! Thank you for joining our newsletter.');
+    } else {
+      showToast(res && res.message ? res.message : 'Subscription failed. Please try again.');
+    }
+  });
+}
+// Show newsletter popup after 15 seconds of browsing
+setTimeout(function() { showNewsletterPopup(); }, 15000);
 
 /* ===== PWA ===== */
 var deferredPrompt = null;
@@ -632,14 +795,263 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+/* ===== PDF VIEWER ===== */
+var pdfDoc = null;
+var pdfPage = 0;
+var pdfTotal = 0;
+var pdfScale = 0;
+var pdfBaseScale = 0;
+var pdfRendering = false;
+
+function openPdfViewer(url, title) {
+  var overlay = document.getElementById('pdf-viewer');
+  document.getElementById('pdf-viewer-title').textContent = title || 'Book Viewer';
+  document.getElementById('pdf-page-info').textContent = 'Loading...';
+  document.getElementById('pdf-loading').style.display = 'flex';
+  document.getElementById('pdf-prev').disabled = true;
+  document.getElementById('pdf-next').disabled = true;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  pdfDoc = null; pdfPage = 1; pdfTotal = 0; pdfScale = 0;
+
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  pdfjsLib.getDocument(url).promise.then(function(doc) {
+    pdfDoc = doc;
+    pdfTotal = doc.numPages;
+    document.getElementById('pdf-loading').style.display = 'none';
+    renderPdfPage(pdfPage);
+  }).catch(function(err) {
+    document.getElementById('pdf-loading').textContent = 'Failed to load PDF. Try the download button instead.';
+    console.error('PDF load error:', err);
+  });
+}
+
+function renderPdfPage(num, flipDir) {
+  if (!pdfDoc || pdfRendering) return;
+  pdfRendering = true;
+  pdfPage = num;
+  document.getElementById('pdf-page-info').textContent = num + ' / ' + pdfTotal;
+  document.getElementById('pdf-prev').disabled = (num <= 1);
+  document.getElementById('pdf-next').disabled = (num >= pdfTotal);
+
+  pdfDoc.getPage(num).then(function(page) {
+    var canvas = document.getElementById('pdf-canvas');
+    var ctx = canvas.getContext('2d');
+    var container = document.getElementById('pdf-canvas-container');
+
+    if (pdfScale === 0) {
+      // Auto-fit: calculate scale based on available space
+      var bodyEl = document.querySelector('.pdf-viewer-body');
+      var availW = bodyEl.clientWidth - 140;
+      var availH = bodyEl.clientHeight - 40;
+      var vp = page.getViewport({ scale: 1 });
+      var scaleW = availW / vp.width;
+      var scaleH = availH / vp.height;
+      pdfScale = Math.min(scaleW, scaleH, 2);
+      pdfBaseScale = pdfScale;
+    }
+
+    var viewport = page.getViewport({ scale: pdfScale });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
+      pdfRendering = false;
+      // Flip animation
+      if (flipDir) {
+        container.classList.add(flipDir === 'left' ? 'flip-left' : 'flip-right');
+        setTimeout(function() { container.classList.remove('flip-left', 'flip-right'); }, 500);
+      }
+    });
+  });
+}
+
+function pdfPrev() {
+  if (pdfPage <= 1) return;
+  renderPdfPage(pdfPage - 1, 'right');
+}
+
+function pdfNext() {
+  if (pdfPage >= pdfTotal) return;
+  renderPdfPage(pdfPage + 1, 'left');
+}
+
+function pdfZoom(delta, fit) {
+  if (!pdfDoc) return;
+  if (fit) {
+    pdfScale = 0; // Will auto-fit
+  } else {
+    pdfScale = Math.max(0.5, Math.min(3, pdfScale + delta));
+  }
+  renderPdfPage(pdfPage);
+}
+
+function closePdfViewer() {
+  document.getElementById('pdf-viewer').classList.remove('open');
+  document.body.style.overflow = '';
+  pdfDoc = null;
+  var canvas = document.getElementById('pdf-canvas');
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+// Keyboard navigation for PDF viewer
+document.addEventListener('keydown', function(e) {
+  var overlay = document.getElementById('pdf-viewer');
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); pdfPrev(); }
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); pdfNext(); }
+  if (e.key === 'Escape') { closePdfViewer(); }
+});
+
+/* ===== HOMEPAGE WIDGET ENGINE ===== */
+function loadWidgetConfig() {
+  return apiCall('/settings/widgets/public').then(function(res) {
+    if (res && res.data && res.data.widgets) {
+      widgetConfig = res.data.widgets;
+    }
+    applyWidgetLayout();
+  });
+}
+
+function applyWidgetLayout() {
+  var home = document.getElementById('page-home');
+  if (!home || !widgetConfig) return;
+
+  // Collect all home-widget elements
+  var allWidgets = {};
+  var els = home.querySelectorAll('.home-widget');
+  for (var i = 0; i < els.length; i++) {
+    var wid = els[i].id.replace('hw-', '');
+    allWidgets[wid] = els[i];
+  }
+
+  // Reorder and show/hide based on config
+  widgetConfig.forEach(function(w) {
+    var el = allWidgets[w.id];
+    if (!el) return;
+    // Move to end of parent (preserves config order)
+    home.appendChild(el);
+    // Show/hide
+    el.style.display = w.enabled ? '' : 'none';
+  });
+
+  // Load data for newly enabled home widgets
+  widgetConfig.forEach(function(w) {
+    if (!w.enabled) return;
+    var count = (w.settings && w.settings.count) ? w.settings.count : 3;
+    if (w.id === 'testimonies') loadHomeTestimonies(count);
+    if (w.id === 'reviews') loadHomeReviews(count);
+    if (w.id === 'ministries') loadHomeMinistries();
+    if (w.id === 'galleries') loadHomeGalleries(count);
+  });
+}
+
+function getWidgetSetting(widgetId, key, fallback) {
+  if (!widgetConfig) return fallback;
+  for (var i = 0; i < widgetConfig.length; i++) {
+    if (widgetConfig[i].id === widgetId && widgetConfig[i].settings) {
+      return widgetConfig[i].settings[key] !== undefined ? widgetConfig[i].settings[key] : fallback;
+    }
+  }
+  return fallback;
+}
+
+function loadHomeTestimonies(count) {
+  apiCall('/testimonies/approved').then(function(res) {
+    var testimonies = (res && res.data) ? res.data : [];
+    var el = document.getElementById('home-testimonies');
+    if (el) el.innerHTML = testimonies.slice(0, count || 3).map(testimonyCard).join('') || '<p class="loading">No testimonies yet.</p>';
+  });
+}
+function loadHomeReviews(count) {
+  apiCall('/reviews/approved').then(function(res) {
+    var reviews = [];
+    if (res && res.data) {
+      reviews = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
+    var el = document.getElementById('home-reviews');
+    if (el) el.innerHTML = reviews.slice(0, count || 3).map(reviewCard).join('') || '<p class="loading">No reviews yet.</p>';
+  });
+}
+function loadHomeMinistries() {
+  apiCall('/ministries').then(function(res) {
+    var list = (res && res.data && res.data.data) ? res.data.data : [];
+    var el = document.getElementById('home-ministries');
+    if (el) el.innerHTML = list.slice(0, 6).map(function(m, i) {
+      return '<div class="volunteer-card"><div class="volunteer-icon">' + MINISTRY_ICONS[i % MINISTRY_ICONS.length] + '</div>' +
+        '<div class="volunteer-name">' + esc(m.name) + '</div></div>';
+    }).join('') || '<p class="loading">No ministries.</p>';
+  });
+}
+function loadHomeGalleries(count) {
+  apiCall('/galleries').then(function(res) {
+    var galleries = [];
+    if (res && res.data) {
+      galleries = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
+    var el = document.getElementById('home-galleries');
+    if (el) el.innerHTML = galleries.slice(0, count || 6).map(function(g) {
+      var thumb = g.cover_image ? '/storage/' + g.cover_image : (g.images && g.images[0] ? '/storage/' + g.images[0].path : '');
+      return '<div class="card" style="padding:0;overflow:hidden">' +
+        (thumb ? '<div style="height:140px;overflow:hidden"><img src="' + esc(thumb) + '" alt="' + esc(g.title) + '" style="width:100%;height:100%;object-fit:cover"></div>' : '') +
+        '<div style="padding:0.8rem"><h3 class="card-title" style="font-size:0.9rem">' + esc(g.title) + '</h3></div></div>';
+    }).join('') || '<p class="loading">No galleries.</p>';
+  });
+}
+function submitHomeNewsletter() {
+  var email = document.getElementById('home-newsletter-email').value;
+  if (!email.trim()) { showToast('Please enter your email.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email.'); return; }
+  apiCall('/newsletter/subscribe', {
+    method: 'POST',
+    body: JSON.stringify({ email: email })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('home-newsletter-email').value = '';
+      localStorage.setItem('newsletter-subscribed', '1');
+      showToast('\uD83D\uDC8C Subscribed! Thank you for joining.');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed. Try again.');
+    }
+  });
+}
+function submitHomeContact() {
+  var n = document.getElementById('home-contact-name').value;
+  var e = document.getElementById('home-contact-email').value;
+  var s = document.getElementById('home-contact-subject').value;
+  var m = document.getElementById('home-contact-message').value;
+  if (!n.trim() || !e.trim() || !s.trim() || !m.trim()) { showToast('Please fill all fields.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { showToast('Please enter a valid email.'); return; }
+  apiCall('/contact', {
+    method: 'POST',
+    body: JSON.stringify({ name: n, email: e, subject: s, message: m })
+  }).then(function(res) {
+    if (res && res.success) {
+      document.getElementById('home-contact-name').value = '';
+      document.getElementById('home-contact-email').value = '';
+      document.getElementById('home-contact-subject').value = '';
+      document.getElementById('home-contact-message').value = '';
+      showToast('\u2709\uFE0F Message sent!');
+    } else {
+      showToast(res && res.message ? res.message : 'Failed. Try again.');
+    }
+  });
+}
+
 /* ===== INIT ===== */
 buildNav();
 buildStarInput();
 buildGiving();
 updateAuthUI();
 Promise.allSettled([
+  loadWidgetConfig(),
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
-  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadChurchSettings(), loadMinistries()
+  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries()
 ]);
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
   m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });

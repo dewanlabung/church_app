@@ -47,6 +47,11 @@ class PrayerRequestController extends Controller
             'is_urgent'   => ['sometimes', 'boolean'],
         ]);
 
+        // Map description to the 'request' DB column
+        if (!empty($validated['description'])) {
+            $validated['request'] = $validated['description'];
+        }
+
         $validated['status']       = 'pending';
         $validated['prayer_count'] = 0;
 

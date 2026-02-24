@@ -19,6 +19,7 @@ use App\Models\Blessing;
 use App\Models\Gallery;
 use App\Models\Ministry;
 use App\Models\Donation;
+use App\Models\Testimony;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -41,6 +42,7 @@ class AdminController extends Controller
             'galleries' => Gallery::count(),
             'ministries' => Ministry::count(),
             'donations' => Donation::count(),
+            'testimonies' => Testimony::count(),
         ];
 
         $recentPrayerRequests = PrayerRequest::latest()->take(5)->get();

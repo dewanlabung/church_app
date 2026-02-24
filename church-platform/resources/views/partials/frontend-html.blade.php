@@ -53,34 +53,101 @@
 </div>
 <!-- MAIN -->
 <main class="main-content">
-  <!-- HOME -->
+  <!-- HOME (dynamic sections rendered by JS from widget_config) -->
   <div class="page-section active" id="page-home">
-    <div class="ticker">
-      <span class="ticker-label">Announcements</span>
-      <span class="ticker-text" id="ticker-text">Welcome to our church! Check back for announcements.</span>
+    <!-- Container: JS will reorder/show/hide these based on widget_config -->
+    <div id="hw-announcements" class="home-widget">
+      <div class="ticker">
+        <span class="ticker-label">Announcements</span>
+        <span class="ticker-text" id="ticker-text">Welcome to our church! Check back for announcements.</span>
+      </div>
     </div>
-    <section class="hero-section">
-      <div class="hero-label">Verse of the Day</div>
-      <p class="verse-text" id="verse-text">"Loading..."</p>
-      <span class="verse-ref" id="verse-ref"></span>
-    </section>
-    <section class="blessing-card">
-      <h2 class="blessing-title" id="blessing-title">Today's Blessing</h2>
-      <p class="blessing-text" id="blessing-text">Loading...</p>
-      <p class="blessing-author" id="blessing-author"></p>
-    </section>
-    <div id="home-posts"></div>
-    <div class="section-header">
-      <h2 class="section-title">&#128591; Prayer Requests</h2>
-      <button class="section-action" onclick="openModal('prayer')">+ Submit Prayer</button>
+    <div id="hw-verse" class="home-widget">
+      <section class="hero-section">
+        <div class="hero-label">Verse of the Day</div>
+        <p class="verse-text" id="verse-text">"Loading..."</p>
+        <span class="verse-ref" id="verse-ref"></span>
+      </section>
     </div>
-    <div class="cards-grid" id="home-prayers"></div>
-    <div class="section-header">
-      <h2 class="section-title">&#128197; Upcoming Events</h2>
-      <button class="section-action" onclick="navigate('events')">View All</button>
+    <div id="hw-blessing" class="home-widget">
+      <section class="blessing-card">
+        <h2 class="blessing-title" id="blessing-title">Today's Blessing</h2>
+        <p class="blessing-text" id="blessing-text">Loading...</p>
+        <p class="blessing-author" id="blessing-author"></p>
+      </section>
     </div>
-    <div class="cards-grid" id="home-events"></div>
-    <div id="home-sermon"></div>
+    <div id="hw-posts" class="home-widget">
+      <div id="home-posts"></div>
+    </div>
+    <div id="hw-prayers" class="home-widget">
+      <div class="section-header">
+        <h2 class="section-title">&#128591; Prayer Requests</h2>
+        <button class="section-action" onclick="openModal('prayer')">+ Submit Prayer</button>
+      </div>
+      <div class="cards-grid" id="home-prayers"></div>
+    </div>
+    <div id="hw-events" class="home-widget">
+      <div class="section-header">
+        <h2 class="section-title">&#128197; Upcoming Events</h2>
+        <button class="section-action" onclick="navigate('events')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-events"></div>
+    </div>
+    <div id="hw-sermon" class="home-widget">
+      <div id="home-sermon"></div>
+    </div>
+    <div id="hw-testimonies" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#10013; Testimonies</h2>
+        <button class="section-action" onclick="navigate('testimonies')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-testimonies"></div>
+    </div>
+    <div id="hw-reviews" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#11088; Reviews</h2>
+        <button class="section-action" onclick="navigate('reviews')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-reviews"></div>
+    </div>
+    <div id="hw-ministries" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#129309; Ministries</h2>
+        <button class="section-action" onclick="navigate('ministries')">View All</button>
+      </div>
+      <div class="cards-grid" id="home-ministries"></div>
+    </div>
+    <div id="hw-galleries" class="home-widget" style="display:none">
+      <div class="section-header">
+        <h2 class="section-title">&#128248; Gallery</h2>
+      </div>
+      <div class="cards-grid" id="home-galleries"></div>
+    </div>
+    <div id="hw-newsletter" class="home-widget" style="display:none">
+      <section class="blessing-card" style="text-align:center">
+        <h2 class="blessing-title" style="font-size:1.4rem">&#128236; Stay Connected</h2>
+        <p class="blessing-text" style="font-size:0.95rem;margin-bottom:1rem">Subscribe to our newsletter for weekly updates, devotionals, and church news.</p>
+        <div style="display:flex;gap:0.5rem;max-width:400px;margin:0 auto">
+          <input class="form-input" id="home-newsletter-email" type="email" placeholder="Your email address" style="flex:1">
+          <button class="btn-primary" onclick="submitHomeNewsletter()" style="white-space:nowrap">Subscribe</button>
+        </div>
+      </section>
+    </div>
+    <div id="hw-contact" class="home-widget" style="display:none">
+      <section class="blessing-card">
+        <h2 class="blessing-title" style="font-size:1.4rem">&#9993;&#65039; Get in Touch</h2>
+        <p class="blessing-text" style="font-size:0.95rem;margin-bottom:1rem">Have a question? Send us a message.</p>
+        <div style="max-width:500px;margin:0 auto">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.5rem">
+            <input class="form-input" id="home-contact-name" placeholder="Your name">
+            <input class="form-input" id="home-contact-email" type="email" placeholder="Your email">
+          </div>
+          <input class="form-input" id="home-contact-subject" placeholder="Subject" style="margin-bottom:0.5rem">
+          <textarea class="form-textarea" id="home-contact-message" placeholder="Your message..." rows="3" style="margin-bottom:0.5rem"></textarea>
+          <button class="btn-primary" onclick="submitHomeContact()">Send Message</button>
+        </div>
+      </section>
+    </div>
   </div>
   <!-- EVENTS -->
   <div class="page-section" id="page-events">
@@ -149,6 +216,76 @@
     </div>
     <div class="cards-grid" id="all-reviews"></div>
   </div>
+  <!-- TESTIMONIES -->
+  <div class="page-section" id="page-testimonies">
+    <div class="section-header">
+      <h2 class="section-title">&#10013; Testimonies</h2>
+      <button class="section-action" onclick="openModal('testimony')">+ Share Your Testimony</button>
+    </div>
+    <p style="color:var(--text-secondary);margin-bottom:1.2rem;font-style:italic">"They triumphed over him by the blood of the Lamb and by the word of their testimony." &mdash; Revelation 12:11</p>
+    <div class="cards-grid" id="all-testimonies"></div>
+  </div>
+  <!-- CONTACT -->
+  <div class="page-section" id="page-contact">
+    <div class="section-header"><h2 class="section-title">&#9993;&#65039; Contact Us</h2></div>
+    <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-style:italic">"Let us therefore come boldly unto the throne of grace." &mdash; Hebrews 4:16</p>
+    <div class="contact-layout">
+      <div class="contact-form-card">
+        <h3 style="font-family:var(--font-display);font-size:1.2rem;color:var(--cream);margin-bottom:1rem">Send Us a Message</h3>
+        <div class="form-group">
+          <label class="form-label">Your Name *</label>
+          <input class="form-input" id="contact-name" placeholder="Enter your full name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address *</label>
+          <input class="form-input" id="contact-email" type="email" placeholder="Enter your email">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input class="form-input" id="contact-phone" type="tel" placeholder="Enter your phone number (optional)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject *</label>
+          <input class="form-input" id="contact-subject" placeholder="What is this about?">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message *</label>
+          <textarea class="form-textarea" id="contact-message" rows="5" placeholder="Write your message here..."></textarea>
+        </div>
+        <button class="btn-primary" onclick="submitContact()">&#9993;&#65039; Send Message</button>
+      </div>
+      <div class="contact-info-card">
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#128205;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Address</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-address">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#128222;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Phone</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-phone-info">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#9993;&#65039;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Email</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-email-info">Loading...</p>
+          </div>
+        </div>
+        <div class="contact-info-item">
+          <div class="contact-info-icon">&#9962;</div>
+          <div>
+            <h4 style="font-family:var(--font-display);font-size:0.95rem;color:var(--cream);margin-bottom:0.2rem">Service Times</h4>
+            <p style="font-size:0.88rem;color:var(--text-secondary)" id="contact-service-times">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
   <!-- ABOUT -->
   <div class="page-section" id="page-about">
     <div class="section-header"><h2 class="section-title">&#9962; About Our Church</h2></div>
@@ -213,6 +350,30 @@
       <textarea class="form-textarea" id="review-text" placeholder="Share your experience with our church..."></textarea>
     </div>
     <button class="btn-primary" onclick="submitReview()">&#11088; Submit Review</button>
+  </div>
+</div>
+<!-- TESTIMONY MODAL -->
+<div class="modal-overlay" id="modal-testimony">
+  <div class="modal-content">
+    <div class="modal-title">Share Your Testimony <button class="modal-close" onclick="closeModal('testimony')">&#10005;</button></div>
+    <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;font-style:italic">"Always be prepared to give an answer to everyone who asks you to give the reason for the hope that you have." &mdash; 1 Peter 3:15</p>
+    <div class="form-group">
+      <label class="form-label">Your Name</label>
+      <input class="form-input" id="testimony-name" placeholder="Enter your full name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date of Born Again</label>
+      <input class="form-input" id="testimony-born-again" type="date" placeholder="When did you accept Christ?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Baptism Date</label>
+      <input class="form-input" id="testimony-baptism" type="date" placeholder="When were you baptized?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Testimony</label>
+      <textarea class="form-textarea" id="testimony-text" rows="6" placeholder="Share your testimony... How did God work in your life? What has He done for you? (minimum 20 characters)"></textarea>
+    </div>
+    <button class="btn-primary" onclick="submitTestimony()">&#10013; Submit Testimony</button>
   </div>
 </div>
 <!-- AUTH MODAL -->
@@ -283,6 +444,59 @@
       <div class="auth-switch">
         Already have an account? <button onclick="showLoginForm()">Sign In</button>
       </div>
+    </div>
+  </div>
+</div>
+<!-- PDF VIEWER -->
+<div class="pdf-viewer-overlay" id="pdf-viewer">
+  <div class="pdf-viewer-header">
+    <div class="pdf-viewer-title" id="pdf-viewer-title">Book Title</div>
+    <div class="pdf-viewer-controls">
+      <button class="pdf-viewer-btn" onclick="pdfZoom(-0.2)" title="Zoom Out">&#8722;</button>
+      <button class="pdf-viewer-btn" onclick="pdfZoom(0.2)" title="Zoom In">&#43;</button>
+      <button class="pdf-viewer-btn" onclick="pdfZoom(0, true)" title="Fit to Page">Fit</button>
+      <span class="pdf-viewer-page-info" id="pdf-page-info">0 / 0</span>
+      <button class="pdf-viewer-btn close-btn" onclick="closePdfViewer()">&#10005; Close</button>
+    </div>
+  </div>
+  <div class="pdf-viewer-body">
+    <button class="pdf-viewer-nav-arrow prev" id="pdf-prev" onclick="pdfPrev()" disabled>&#9664;</button>
+    <div class="pdf-viewer-page-wrap">
+      <div class="pdf-viewer-canvas-container" id="pdf-canvas-container">
+        <canvas id="pdf-canvas"></canvas>
+      </div>
+      <div class="pdf-viewer-loading" id="pdf-loading" style="display:none">Loading PDF...</div>
+    </div>
+    <button class="pdf-viewer-nav-arrow next" id="pdf-next" onclick="pdfNext()" disabled>&#9654;</button>
+  </div>
+</div>
+<!-- NEWSLETTER POPUP -->
+<div class="newsletter-popup" id="newsletter-popup">
+  <div class="newsletter-popup-content">
+    <button class="newsletter-popup-close" onclick="closeNewsletterPopup()">&#10005;</button>
+    <div class="newsletter-popup-icon">&#128140;</div>
+    <h3 style="font-family:var(--font-display);font-size:1.3rem;color:var(--cream);margin-bottom:0.4rem">Stay Connected</h3>
+    <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:1rem">Subscribe to our newsletter for weekly updates, devotionals, and church announcements.</p>
+    <div class="form-group" style="margin-bottom:0.6rem">
+      <input class="form-input" id="newsletter-name" placeholder="Your name (optional)" style="text-align:center">
+    </div>
+    <div class="form-group" style="margin-bottom:0.8rem">
+      <input class="form-input" id="newsletter-email" type="email" placeholder="Enter your email address" style="text-align:center">
+    </div>
+    <button class="btn-primary" onclick="submitNewsletter()">&#128140; Subscribe Now</button>
+    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.6rem">We respect your privacy. Unsubscribe anytime.</p>
+  </div>
+</div>
+<!-- NEWSLETTER INLINE (footer) -->
+<div class="newsletter-footer" id="newsletter-footer">
+  <div class="newsletter-footer-inner">
+    <div class="newsletter-footer-text">
+      <h3 style="font-family:var(--font-display);font-size:1.1rem;color:var(--cream);margin-bottom:0.3rem">&#128140; Join Our Newsletter</h3>
+      <p style="font-size:0.85rem;color:var(--text-secondary)">Get weekly updates delivered to your inbox.</p>
+    </div>
+    <div class="newsletter-footer-form">
+      <input class="form-input" id="newsletter-footer-email" type="email" placeholder="Your email address" style="flex:1;min-width:200px">
+      <button class="btn-primary" style="width:auto;padding:10px 24px;white-space:nowrap" onclick="submitFooterNewsletter()">Subscribe</button>
     </div>
   </div>
 </div>

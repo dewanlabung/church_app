@@ -3,9 +3,24 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Book extends Model
 {
+    protected static function booted()
+    {
+        static::creating(function ($book) {
+            if (empty($book->slug)) {
+                $slug = Str::slug($book->title);
+                $original = $slug;
+                $count = 1;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $original . '-' . $count++;
+                }
+                $book->slug = $slug;
+            }
+        });
+    }
     protected $fillable = [
         'title', 'slug', 'author', 'description', 'cover_image', 'pdf_file',
         'category', 'isbn', 'publisher', 'pages', 'published_year',
