@@ -914,7 +914,7 @@ function loadWidgetConfig() {
     if (res && res.data && res.data.widgets) {
       widgetConfig = res.data.widgets;
     }
-    applyWidgetLayout();
+    // Layout is applied after all content loads (in init block)
   });
 }
 
@@ -963,7 +963,10 @@ function getWidgetSetting(widgetId, key, fallback) {
 
 function loadHomeTestimonies(count) {
   apiCall('/testimonies/approved').then(function(res) {
-    var testimonies = (res && res.data) ? res.data : [];
+    var testimonies = [];
+    if (res && res.data) {
+      testimonies = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
     var el = document.getElementById('home-testimonies');
     if (el) el.innerHTML = testimonies.slice(0, count || 3).map(testimonyCard).join('') || '<p class="loading">No testimonies yet.</p>';
   });
@@ -980,7 +983,10 @@ function loadHomeReviews(count) {
 }
 function loadHomeMinistries() {
   apiCall('/ministries').then(function(res) {
-    var list = (res && res.data && res.data.data) ? res.data.data : [];
+    var list = [];
+    if (res && res.data) {
+      list = res.data.data ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+    }
     var el = document.getElementById('home-ministries');
     if (el) el.innerHTML = list.slice(0, 6).map(function(m, i) {
       return '<div class="volunteer-card"><div class="volunteer-icon">' + MINISTRY_ICONS[i % MINISTRY_ICONS.length] + '</div>' +
@@ -1052,7 +1058,10 @@ Promise.allSettled([
   loadWidgetConfig(),
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries()
-]);
+]).then(function() {
+  // Apply widget layout after all content is loaded to avoid race conditions
+  applyWidgetLayout();
+});
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
   m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
 });

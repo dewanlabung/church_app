@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\SitemapController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\TestimonyController;
+use App\Http\Controllers\Api\SystemController;
 use App\Http\Controllers\Api\VerseController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
@@ -236,4 +237,14 @@ Route::middleware('auth:sanctum')->group(function () {
     // Homepage Widget Config
     Route::get('/settings/widgets', [SettingController::class, 'widgetConfig']);
     Route::put('/settings/widgets', [SettingController::class, 'updateWidgetConfig']);
+
+    // System & Deploy
+    Route::get('/system/status', [SystemController::class, 'status']);
+    Route::post('/system/git-pull', [SystemController::class, 'gitPull']);
+    Route::post('/system/migrate', [SystemController::class, 'migrate']);
+    Route::post('/system/build', [SystemController::class, 'buildAssets']);
+    Route::post('/system/clear-cache', [SystemController::class, 'clearCache']);
+    Route::post('/system/optimize', [SystemController::class, 'optimize']);
+    Route::post('/system/deploy', [SystemController::class, 'deploy']);
+    Route::get('/system/git-log', [SystemController::class, 'gitLog']);
 });

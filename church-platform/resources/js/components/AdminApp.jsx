@@ -22,6 +22,7 @@ import MenuManager from './admin/MenuManager';
 import RolesManager from './admin/RolesManager';
 import TestimoniesManager from './admin/TestimoniesManager';
 import HomepageCustomizer from './admin/HomepageCustomizer';
+import SystemManager from './admin/SystemManager';
 
 const components = {
     'verses': VersesManager,
@@ -48,6 +49,7 @@ const components = {
     'roles': RolesManager,
     'testimonies': TestimoniesManager,
     'homepage': HomepageCustomizer,
+    'system': SystemManager,
 };
 
 export default function AdminApp({ section }) {
