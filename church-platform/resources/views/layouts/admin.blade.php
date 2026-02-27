@@ -206,6 +206,12 @@
                     <i class="fas fa-cog w-5 mr-3 text-center text-indigo-300"></i>
                     Settings
                 </a>
+
+                <a href="{{ route('admin.manage', 'system') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/system') ? 'active' : '' }}">
+                    <i class="fas fa-server w-5 mr-3 text-center text-indigo-300"></i>
+                    System & Deploy
+                </a>
             </nav>
 
             {{-- Sidebar Footer --}}
