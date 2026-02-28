@@ -24,6 +24,9 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\TestimonyController;
 use App\Http\Controllers\Api\SystemController;
 use App\Http\Controllers\Api\VerseController;
+use App\Http\Controllers\Api\AppearanceController;
+use App\Http\Controllers\Api\MobileThemeController;
+use App\Http\Controllers\Api\LocalizationController;
 use App\Http\Controllers\Auth\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,6 +78,17 @@ Route::get('/categories', [CategoryController::class, 'all']);
 
 // Menus (public)
 Route::get('/menus/{location}', [MenuController::class, 'show']);
+
+// Mobile Theme (public)
+Route::get('/mobile-theme', [MobileThemeController::class, 'show']);
+Route::get('/pwa-config', [MobileThemeController::class, 'pwaConfig']);
+
+// Localizations (public)
+Route::get('/translations/{language}', [LocalizationController::class, 'getTranslations']);
+
+// Appearance (public - CSS themes)
+Route::get('/appearance', [AppearanceController::class, 'index']);
+Route::get('/appearance/themes', [AppearanceController::class, 'themes']);
 
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
@@ -237,6 +251,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // Homepage Widget Config
     Route::get('/settings/widgets', [SettingController::class, 'widgetConfig']);
     Route::put('/settings/widgets', [SettingController::class, 'updateWidgetConfig']);
+
+    // Appearance (admin)
+    Route::put('/appearance', [AppearanceController::class, 'update']);
+    Route::post('/appearance/themes', [AppearanceController::class, 'saveTheme']);
+    Route::put('/appearance/themes/{theme}', [AppearanceController::class, 'saveTheme']);
+    Route::delete('/appearance/themes/{theme}', [AppearanceController::class, 'deleteTheme']);
+    Route::post('/appearance/favicon', [AppearanceController::class, 'generateFavicon']);
+
+    // Mobile Theme (admin)
+    Route::put('/mobile-theme', [MobileThemeController::class, 'update']);
+    Route::put('/pwa-config', [MobileThemeController::class, 'updatePwaConfig']);
+
+    // Localizations (admin)
+    Route::get('/localizations', [LocalizationController::class, 'index']);
+    Route::get('/localizations/{localization}', [LocalizationController::class, 'show']);
+    Route::post('/localizations', [LocalizationController::class, 'store']);
+    Route::put('/localizations/{localization}', [LocalizationController::class, 'update']);
+    Route::delete('/localizations/{localization}', [LocalizationController::class, 'destroy']);
 
     // System & Deploy
     Route::get('/system/status', [SystemController::class, 'status']);

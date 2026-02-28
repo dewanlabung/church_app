@@ -72,7 +72,39 @@ class SettingController extends Controller
             'meta_keywords'     => 'nullable|string|max:500',
             'theme_config'      => 'nullable|json|max:10000',
             'widget_config'     => 'nullable|json|max:10000',
+            // Auth providers
+            'auth_google_enabled'         => 'nullable|boolean',
+            'auth_google_client_id'       => 'nullable|string|max:500',
+            'auth_google_client_secret'   => 'nullable|string|max:500',
+            'auth_facebook_enabled'       => 'nullable|boolean',
+            'auth_facebook_client_id'     => 'nullable|string|max:500',
+            'auth_facebook_client_secret' => 'nullable|string|max:500',
+            // Storage
+            'storage_driver'       => 'nullable|string|in:local,s3',
+            'storage_s3_key'       => 'nullable|string|max:500',
+            'storage_s3_secret'    => 'nullable|string|max:500',
+            'storage_s3_region'    => 'nullable|string|max:50',
+            'storage_s3_bucket'    => 'nullable|string|max:255',
+            'max_upload_size'      => 'nullable|integer|min:1|max:1024',
+            'allowed_file_types'   => 'nullable|string|max:500',
+            // Cache
+            'cache_driver'         => 'nullable|string|in:file,database,redis,memcached',
+            'cache_ttl'            => 'nullable|integer|min:60|max:86400',
+            'enable_page_cache'    => 'nullable|boolean',
+            'enable_minification'  => 'nullable|boolean',
+            'cdn_url'              => 'nullable|string|max:500',
+            // Logging
+            'log_channel'          => 'nullable|string|in:daily,single,stack,syslog,errorlog',
+            'queue_driver'         => 'nullable|string|in:sync,database,redis',
         ]);
+
+        // Don't overwrite secrets if masked placeholder sent
+        $secrets = ['auth_google_client_secret', 'auth_facebook_client_secret', 'storage_s3_secret'];
+        foreach ($secrets as $secret) {
+            if (isset($validated[$secret]) && ($validated[$secret] === '********' || empty($validated[$secret]))) {
+                unset($validated[$secret]);
+            }
+        }
 
         // Decode JSON strings to arrays for proper storage
         if (isset($validated['theme_config']) && is_string($validated['theme_config'])) {

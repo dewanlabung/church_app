@@ -12,9 +12,17 @@ class Setting extends Model
         'maintenance_mode' => 'boolean',
         'theme_config' => 'array',
         'widget_config' => 'array',
+        'themes_config' => 'array',
+        'mobile_theme_config' => 'array',
         'email_contact_notification' => 'boolean',
         'email_newsletter_enabled' => 'boolean',
         'email_welcome_enabled' => 'boolean',
+        'mobile_theme_enabled' => 'boolean',
+        'pwa_enabled' => 'boolean',
+        'auth_google_enabled' => 'boolean',
+        'auth_facebook_enabled' => 'boolean',
+        'enable_page_cache' => 'boolean',
+        'enable_minification' => 'boolean',
     ];
 
     /**
@@ -22,6 +30,8 @@ class Setting extends Model
      */
     protected $hidden = [
         'smtp_password', 'mailchimp_api_key', 'sendgrid_api_key', 'mailgun_secret',
+        'auth_google_client_secret', 'auth_facebook_client_secret',
+        'storage_s3_secret',
     ];
 
     public static function get($key, $default = null)

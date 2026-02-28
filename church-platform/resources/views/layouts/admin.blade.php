@@ -63,8 +63,20 @@
 
                 <a href="{{ route('admin.manage', 'homepage') }}"
                    class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/homepage') ? 'active' : '' }}">
-                    <i class="fas fa-palette w-5 mr-3 text-center text-indigo-300"></i>
+                    <i class="fas fa-home w-5 mr-3 text-center text-indigo-300"></i>
                     Customize Homepage
+                </a>
+
+                <a href="{{ route('admin.manage', 'appearance') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/appearance') ? 'active' : '' }}">
+                    <i class="fas fa-palette w-5 mr-3 text-center text-indigo-300"></i>
+                    Appearance
+                </a>
+
+                <a href="{{ route('admin.manage', 'mobile-theme') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/mobile-theme') ? 'active' : '' }}">
+                    <i class="fas fa-mobile-alt w-5 mr-3 text-center text-indigo-300"></i>
+                    Mobile Theme
                 </a>
 
                 <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Content</p>
@@ -205,6 +217,12 @@
                    class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/settings') ? 'active' : '' }}">
                     <i class="fas fa-cog w-5 mr-3 text-center text-indigo-300"></i>
                     Settings
+                </a>
+
+                <a href="{{ route('admin.manage', 'translations') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/translations') ? 'active' : '' }}">
+                    <i class="fas fa-language w-5 mr-3 text-center text-indigo-300"></i>
+                    Translations
                 </a>
 
                 <a href="{{ route('admin.manage', 'system') }}"
