@@ -7,9 +7,11 @@ export default function UsersManager() {
     const [meta, setMeta] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ name: '', email: '', is_admin: false });
+    const [form, setForm] = useState({ name: '', email: '', is_admin: false, password: '', password_confirmation: '' });
     const [alert, setAlert] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [resetModal, setResetModal] = useState(null);
+    const [resetPassword, setResetPassword] = useState('');
 
     const fetchItems = async (page = 1) => {
         setLoading(true);
@@ -33,28 +35,48 @@ export default function UsersManager() {
 
     const openCreate = () => {
         setEditing(null);
-        setForm({ name: '', email: '', is_admin: false });
+        setForm({ name: '', email: '', is_admin: false, password: '', password_confirmation: '' });
         setShowModal(true);
     };
 
     const openEdit = (item) => {
         setEditing(item);
-        setForm({ name: item.name, email: item.email, is_admin: !!item.is_admin });
+        setForm({ name: item.name, email: item.email, is_admin: !!item.is_admin, password: '', password_confirmation: '' });
         setShowModal(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const payload = { name: form.name, email: form.email, is_admin: form.is_admin };
+            if (form.password) {
+                payload.password = form.password;
+                payload.password_confirmation = form.password_confirmation;
+            }
             if (editing) {
-                await put(`/api/users/${editing.id}`, form);
+                await put(`/api/users/${editing.id}`, payload);
                 setAlert({ type: 'success', message: 'User updated.' });
             } else {
-                await post('/api/users', form);
+                await post('/api/users', payload);
                 setAlert({ type: 'success', message: 'User created.' });
             }
             setShowModal(false);
             fetchItems();
+        } catch (e) {
+            setAlert({ type: 'error', message: e.message });
+        }
+    };
+
+    const handleResetPassword = async () => {
+        if (!resetPassword || resetPassword.length < 8) {
+            setAlert({ type: 'error', message: 'Password must be at least 8 characters.' });
+            return;
+        }
+        try {
+            await post(`/api/users/${resetModal.id}/reset-password`, { password: resetPassword });
+            setAlert({ type: 'success', message: `Password reset for ${resetModal.name}.` });
+            setResetModal(null);
+            setResetPassword('');
         } catch (e) {
             setAlert({ type: 'error', message: e.message });
         }
@@ -119,6 +141,7 @@ export default function UsersManager() {
                         <DataTable columns={columns} data={items} actions={(row) => (
                             <div className="flex gap-2">
                                 <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
+                                <button onClick={() => { setResetModal(row); setResetPassword(''); }} className="text-amber-600 hover:text-amber-800 text-sm font-medium">Reset PW</button>
                                 <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                             </div>
                         )} />
@@ -146,11 +169,28 @@ export default function UsersManager() {
                     <FormField label="Name" name="name" value={form.name} onChange={handleChange} required placeholder="Full name" />
                     <FormField label="Email" name="email" type="email" value={form.email} onChange={handleChange} required placeholder="email@example.com" />
                     <FormField label="Administrator" name="is_admin" type="checkbox" value={form.is_admin} onChange={handleChange} />
+                    <div className="border-t pt-4 mt-4">
+                        <p className="text-xs text-gray-500 mb-3">{editing ? 'Leave blank to keep current password.' : 'Set a password for the new user.'}</p>
+                        <FormField label="Password" name="password" type="password" value={form.password} onChange={handleChange} placeholder="Min 8 characters" required={!editing} />
+                        <FormField label="Confirm Password" name="password_confirmation" type="password" value={form.password_confirmation} onChange={handleChange} placeholder="Confirm password" required={!editing} />
+                    </div>
                     <div className="flex justify-end gap-3 pt-2">
                         <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
                         <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Save</button>
                     </div>
                 </form>
+            </Modal>
+
+            {/* Reset Password Modal */}
+            <Modal isOpen={!!resetModal} onClose={() => setResetModal(null)} title={`Reset Password: ${resetModal?.name || ''}`}>
+                <div className="space-y-4">
+                    <p className="text-sm text-gray-600">Set a new password for this user.</p>
+                    <FormField label="New Password" name="resetPassword" type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} placeholder="Min 8 characters" required />
+                    <div className="flex justify-end gap-3 pt-2">
+                        <button type="button" onClick={() => setResetModal(null)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Cancel</button>
+                        <button type="button" onClick={handleResetPassword} className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">Reset Password</button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );

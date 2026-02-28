@@ -287,7 +287,7 @@
                                 <p class="text-sm font-medium text-gray-900">{{ Auth::user()->name ?? 'Admin' }}</p>
                                 <p class="text-xs text-gray-500">{{ Auth::user()->email ?? 'admin@church.com' }}</p>
                             </div>
-                            <a href="{{ route('admin.manage', 'settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                            <a href="{{ route('admin.manage', 'profile') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                 <i class="fas fa-user-circle w-5 mr-2 text-gray-400"></i>Profile
                             </a>
                             <a href="{{ route('admin.manage', 'settings') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">

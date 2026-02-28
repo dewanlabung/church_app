@@ -28,6 +28,7 @@ use App\Http\Controllers\Api\AppearanceController;
 use App\Http\Controllers\Api\MobileThemeController;
 use App\Http\Controllers\Api\LocalizationController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,6 +40,8 @@ use Illuminate\Support\Facades\Route;
 // Public Auth Routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink']);
+Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword']);
 
 // Public Content Routes
 Route::get('/verses/today', [VerseController::class, 'today']);
@@ -239,6 +242,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{user}', [UserController::class, 'update']);
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    Route::post('/users/{user}/reset-password', [ForgotPasswordController::class, 'adminResetPassword']);
 
     // Settings
     Route::put('/settings', [SettingController::class, 'update']);
