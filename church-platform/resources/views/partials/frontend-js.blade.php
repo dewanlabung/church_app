@@ -1,8 +1,8 @@
 <script>
 var API = '/api';
-var PAGES = ['home','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','contact','about'];
-var NAV_LABELS = {home:'Home',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',contact:'Contact',about:'About'};
-var NAV_ICONS = {home:'\u2302',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',contact:'\u2709\uFE0F',about:'\u26EA'};
+var PAGES = ['home','blog','events','prayers','library','studies','sermons','giving','ministries','reviews','testimonies','contact','about'];
+var NAV_LABELS = {home:'Home',blog:'Blog',events:'Events',prayers:'Prayers',library:'Library',studies:'Bible Study',sermons:'Sermons',giving:'Giving',ministries:'Ministries',reviews:'Reviews',testimonies:'Testimonies',contact:'Contact',about:'About'};
+var NAV_ICONS = {home:'\u2302',blog:'\uD83D\uDCF0',events:'\uD83D\uDCC5',prayers:'\uD83D\uDE4F',library:'\uD83D\uDCDA',studies:'\uD83D\uDCD6',sermons:'\uD83C\uDF99\uFE0F',giving:'\uD83D\uDC9B',ministries:'\uD83E\uDD1D',reviews:'\u2B50',testimonies:'\u271D',contact:'\u2709\uFE0F',about:'\u26EA'};
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
@@ -71,6 +71,10 @@ function navigate(page) {
   PAGES.forEach(function(p) {
     document.getElementById('page-' + p).classList.toggle('active', p === page);
   });
+  // Handle special sub-pages
+  var blogDetail = document.getElementById('page-blog-detail');
+  if (blogDetail) blogDetail.classList.toggle('active', page === 'blog-detail');
+  if (page === 'blog') loadBlogPage();
   buildNav();
   closeMobile();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -286,14 +290,7 @@ function loadPosts() {
     var posts = (res && res.data && res.data.data) ? res.data.data : [];
     if (posts.length > 0) {
       document.getElementById('ticker-text').textContent = posts.map(function(p) { return '\uD83D\uDCE2 ' + p.title + (p.excerpt ? ': ' + p.excerpt : ''); }).join('   \u2022   ');
-      document.getElementById('home-posts').innerHTML =
-        '<div class="section-header"><h2 class="section-title">\uD83D\uDCF0 Latest News</h2></div>' +
-        '<div class="cards-grid">' + posts.slice(0, 3).map(function(p) {
-          return '<div class="card"><span class="card-badge badge-worship">' + esc(p.category || 'News') + '</span>' +
-            '<h3 class="card-title">' + esc(p.title) + '</h3>' +
-            '<p class="card-desc">' + esc(p.excerpt || '') + '</p>' +
-            '<p class="card-meta" style="margin-top:0.4rem">' + fmtDate(p.published_at) + (p.author_name ? ' \u2022 ' + esc(p.author_name) : '') + '</p></div>';
-        }).join('') + '</div>';
+      document.getElementById('home-posts').innerHTML = renderHomePosts(posts);
     }
   });
 }
@@ -1223,6 +1220,256 @@ function submitHomeContact() {
       showToast(res && res.message ? res.message : 'Failed. Try again.');
     }
   });
+}
+
+/* ===== BLOG ===== */
+var allBlogPosts = [];
+var blogCategories = [];
+var blogCurrentPage = 1;
+var blogTotalPages = 1;
+var blogLayout = 'grid';
+var blogCategoryFilter = 'All';
+var blogSearchQuery = '';
+
+function setBlogLayout(layout) {
+  blogLayout = layout;
+  document.getElementById('blog-grid-btn').classList.toggle('active', layout === 'grid');
+  document.getElementById('blog-list-btn').classList.toggle('active', layout === 'list');
+  var container = document.getElementById('blog-posts-container');
+  container.className = layout === 'list' ? 'blog-list-container' : 'cards-grid';
+  renderBlogPosts();
+}
+
+function loadBlogPage(page) {
+  page = page || 1;
+  blogCurrentPage = page;
+  var url = '/posts/published?page=' + page + '&per_page=9';
+  if (blogCategoryFilter && blogCategoryFilter !== 'All') url += '&category=' + encodeURIComponent(blogCategoryFilter);
+  if (blogSearchQuery) url += '&search=' + encodeURIComponent(blogSearchQuery);
+
+  apiCall(url).then(function(res) {
+    if (res && res.data) {
+      allBlogPosts = res.data;
+      blogTotalPages = res.last_page || 1;
+      blogCurrentPage = res.current_page || 1;
+    } else {
+      allBlogPosts = [];
+    }
+    renderBlogPosts();
+    renderBlogPagination();
+    loadBlogSidebar();
+  });
+}
+
+function filterBlogPosts() {
+  blogSearchQuery = document.getElementById('blog-search').value.trim();
+  loadBlogPage(1);
+}
+
+function setBlogCategory(cat) {
+  blogCategoryFilter = cat;
+  document.querySelectorAll('#blog-category-filters .filter-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.cat === cat);
+  });
+  loadBlogPage(1);
+}
+
+function renderBlogPosts() {
+  var container = document.getElementById('blog-posts-container');
+  if (!allBlogPosts || allBlogPosts.length === 0) {
+    container.innerHTML = '<div class="blog-empty"><p>No posts found.</p></div>';
+    return;
+  }
+  if (blogLayout === 'list') {
+    container.innerHTML = allBlogPosts.map(blogListCard).join('');
+  } else {
+    container.innerHTML = allBlogPosts.map(blogGridCard).join('');
+  }
+}
+
+function blogGridCard(p) {
+  var img = p.featured_image ? '<div class="blog-card-img"><img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '" loading="lazy"></div>' : '<div class="blog-card-img blog-card-img-placeholder"><span>&#128240;</span></div>';
+  var cat = p.category ? '<span class="card-badge badge-worship">' + esc(p.category) + '</span>' : '';
+  var tags = '';
+  if (p.tags) {
+    var tagArr = p.tags.split(',').slice(0, 3);
+    tags = '<div class="blog-card-tags">' + tagArr.map(function(t) { return '<span class="blog-tag">' + esc(t.trim()) + '</span>'; }).join('') + '</div>';
+  }
+  return '<div class="card blog-card" onclick="viewBlogPost(\'' + esc(p.slug) + '\')">' +
+    img + '<div class="blog-card-body">' + cat +
+    '<h3 class="card-title blog-card-title">' + esc(p.title) + '</h3>' +
+    '<p class="card-desc">' + esc(p.excerpt || (p.content || '').replace(/<[^>]*>/g, '').substring(0, 140)) + '...</p>' +
+    '<div class="blog-card-footer">' +
+    '<span class="card-meta">' + fmtDate(p.published_at || p.created_at) + '</span>' +
+    '<span class="blog-read-more">Read More &#8594;</span>' +
+    '</div>' + tags + '</div></div>';
+}
+
+function blogListCard(p) {
+  var img = p.featured_image ? '<div class="blog-list-img"><img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '" loading="lazy"></div>' : '<div class="blog-list-img blog-card-img-placeholder"><span>&#128240;</span></div>';
+  var cat = p.category ? '<span class="card-badge badge-worship" style="margin-bottom:0.3rem">' + esc(p.category) + '</span>' : '';
+  return '<div class="blog-list-item" onclick="viewBlogPost(\'' + esc(p.slug) + '\')">' +
+    img + '<div class="blog-list-body">' + cat +
+    '<h3 class="card-title blog-card-title">' + esc(p.title) + '</h3>' +
+    '<p class="card-desc">' + esc(p.excerpt || (p.content || '').replace(/<[^>]*>/g, '').substring(0, 200)) + '...</p>' +
+    '<div class="blog-card-footer">' +
+    '<span class="card-meta">' + fmtDate(p.published_at || p.created_at) +
+    (p.view_count ? ' &bull; ' + p.view_count + ' views' : '') + '</span>' +
+    '<span class="blog-read-more">Read More &#8594;</span>' +
+    '</div></div></div>';
+}
+
+function renderBlogPagination() {
+  var el = document.getElementById('blog-pagination');
+  if (blogTotalPages <= 1) { el.innerHTML = ''; return; }
+  var html = '';
+  if (blogCurrentPage > 1) {
+    html += '<button class="blog-page-btn" onclick="loadBlogPage(' + (blogCurrentPage - 1) + ')">&#8592; Prev</button>';
+  }
+  for (var i = 1; i <= blogTotalPages; i++) {
+    if (i === blogCurrentPage) {
+      html += '<button class="blog-page-btn blog-page-active">' + i + '</button>';
+    } else if (Math.abs(i - blogCurrentPage) <= 2 || i === 1 || i === blogTotalPages) {
+      html += '<button class="blog-page-btn" onclick="loadBlogPage(' + i + ')">' + i + '</button>';
+    } else if (Math.abs(i - blogCurrentPage) === 3) {
+      html += '<span class="blog-page-dots">...</span>';
+    }
+  }
+  if (blogCurrentPage < blogTotalPages) {
+    html += '<button class="blog-page-btn" onclick="loadBlogPage(' + (blogCurrentPage + 1) + ')">Next &#8594;</button>';
+  }
+  el.innerHTML = html;
+}
+
+function loadBlogSidebar() {
+  // Categories
+  apiCall('/categories?type=post').then(function(res) {
+    var cats = [];
+    if (res && res.data) cats = Array.isArray(res.data) ? res.data : (res.data.data || []);
+    blogCategories = cats;
+    // Render category filters
+    var filterHtml = '<button class="filter-btn ' + (blogCategoryFilter === 'All' ? 'active' : '') + '" data-cat="All" onclick="setBlogCategory(\'All\')">All</button>';
+    cats.forEach(function(c) {
+      filterHtml += '<button class="filter-btn ' + (blogCategoryFilter === c.name ? 'active' : '') + '" data-cat="' + esc(c.name) + '" onclick="setBlogCategory(\'' + esc(c.name) + '\')">' + esc(c.name) + '</button>';
+    });
+    document.getElementById('blog-category-filters').innerHTML = filterHtml;
+    // Sidebar categories
+    var sideHtml = '<div class="sidebar-cat-item' + (blogCategoryFilter === 'All' ? ' active' : '') + '" onclick="setBlogCategory(\'All\')"><span>All Posts</span></div>';
+    cats.forEach(function(c) {
+      sideHtml += '<div class="sidebar-cat-item' + (blogCategoryFilter === c.name ? ' active' : '') + '" onclick="setBlogCategory(\'' + esc(c.name) + '\')"><span>' + esc(c.name) + '</span></div>';
+    });
+    document.getElementById('sidebar-categories').innerHTML = sideHtml;
+  });
+
+  // Recent posts
+  apiCall('/posts/published?per_page=5').then(function(res) {
+    var posts = (res && res.data) ? res.data : [];
+    var html = posts.map(function(p) {
+      return '<div class="sidebar-recent-item" onclick="viewBlogPost(\'' + esc(p.slug) + '\')">' +
+        (p.featured_image ? '<img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '" class="sidebar-recent-img">' : '<div class="sidebar-recent-img sidebar-recent-placeholder">&#128240;</div>') +
+        '<div><div class="sidebar-recent-title">' + esc(p.title) + '</div>' +
+        '<div class="sidebar-recent-date">' + fmtDate(p.published_at || p.created_at) + '</div></div></div>';
+    }).join('');
+    document.getElementById('sidebar-recent').innerHTML = html || '<p style="font-size:0.85rem;color:var(--text-muted)">No posts yet.</p>';
+    // Also populate detail sidebar if visible
+    var ds = document.getElementById('blog-detail-sidebar');
+    if (ds) {
+      ds.innerHTML = '<div class="sidebar-widget"><h3 class="sidebar-title">Recent Posts</h3>' + (html || '<p style="font-size:0.85rem;color:var(--text-muted)">No posts yet.</p>') + '</div>';
+    }
+  });
+
+  // Tags
+  apiCall('/posts/published?per_page=50').then(function(res) {
+    var posts = (res && res.data) ? res.data : [];
+    var tagMap = {};
+    posts.forEach(function(p) {
+      if (p.tags) {
+        p.tags.split(',').forEach(function(t) {
+          t = t.trim();
+          if (t) tagMap[t] = (tagMap[t] || 0) + 1;
+        });
+      }
+    });
+    var tags = Object.keys(tagMap).sort(function(a, b) { return tagMap[b] - tagMap[a]; }).slice(0, 20);
+    document.getElementById('sidebar-tags').innerHTML = tags.map(function(t) {
+      return '<span class="sidebar-tag" onclick="document.getElementById(\'blog-search\').value=\'' + esc(t) + '\'; filterBlogPosts();">' + esc(t) + '</span>';
+    }).join('') || '<p style="font-size:0.85rem;color:var(--text-muted)">No tags yet.</p>';
+  });
+}
+
+function viewBlogPost(slug) {
+  apiCall('/posts/' + slug).then(function(res) {
+    if (res && res.success && res.data) {
+      var p = res.data;
+      var article = document.getElementById('blog-article');
+      var img = p.featured_image ? '<div class="blog-detail-hero"><img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '"></div>' : '';
+      var tags = '';
+      if (p.tags) {
+        tags = '<div class="blog-detail-tags">' + p.tags.split(',').map(function(t) {
+          return '<span class="blog-tag">' + esc(t.trim()) + '</span>';
+        }).join('') + '</div>';
+      }
+      article.innerHTML = img +
+        '<div class="blog-detail-content">' +
+        (p.category ? '<span class="card-badge badge-worship">' + esc(p.category) + '</span>' : '') +
+        '<h1 class="blog-detail-title">' + esc(p.title) + '</h1>' +
+        '<div class="blog-detail-meta">' +
+        '<span>' + fmtDate(p.published_at || p.created_at) + '</span>' +
+        (p.view_count ? '<span>&bull; ' + p.view_count + ' views</span>' : '') +
+        '</div>' +
+        '<div class="blog-detail-body">' + (p.content || '') + '</div>' +
+        tags +
+        '</div>';
+      // Navigate to blog-detail
+      currentPage = 'blog-detail';
+      PAGES.forEach(function(pg) {
+        document.getElementById('page-' + pg).classList.remove('active');
+      });
+      document.getElementById('page-blog-detail').classList.add('active');
+      buildNav();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
+}
+
+/* ===== HOMEPAGE BLOG WIDGET (ENHANCED) ===== */
+function renderHomePosts(posts, layout) {
+  layout = layout || 'grid';
+  var count = getWidgetSetting('posts', 'count', 3);
+  var widgetLayout = getWidgetSetting('posts', 'layout', 'grid');
+  var shown = posts.slice(0, count);
+  if (shown.length === 0) return '';
+
+  var header = '<div class="section-header"><h2 class="section-title">\uD83D\uDCF0 Latest Blog Posts</h2>' +
+    '<button class="section-action" onclick="navigate(\'blog\')">View All</button></div>';
+
+  if (widgetLayout === 'featured') {
+    // Featured layout: first post large, rest small
+    var first = shown[0];
+    var rest = shown.slice(1);
+    var html = header + '<div class="blog-featured-layout">' +
+      '<div class="blog-featured-main" onclick="viewBlogPost(\'' + esc(first.slug) + '\')">' +
+      (first.featured_image ? '<img src="/storage/' + esc(first.featured_image) + '" alt="' + esc(first.title) + '" class="blog-featured-img">' : '') +
+      '<div class="blog-featured-overlay">' +
+      (first.category ? '<span class="card-badge badge-worship">' + esc(first.category) + '</span>' : '') +
+      '<h3 class="blog-featured-title">' + esc(first.title) + '</h3>' +
+      '<p class="blog-featured-excerpt">' + esc(first.excerpt || '') + '</p>' +
+      '<span class="card-meta">' + fmtDate(first.published_at || first.created_at) + '</span>' +
+      '</div></div>';
+    if (rest.length > 0) {
+      html += '<div class="blog-featured-aside">' + rest.map(function(p) {
+        return '<div class="blog-featured-small" onclick="viewBlogPost(\'' + esc(p.slug) + '\')">' +
+          (p.featured_image ? '<img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '">' : '<div class="blog-card-img-placeholder" style="width:80px;height:80px;min-width:80px"><span>&#128240;</span></div>') +
+          '<div><h4>' + esc(p.title) + '</h4><span class="card-meta">' + fmtDate(p.published_at || p.created_at) + '</span></div></div>';
+      }).join('') + '</div>';
+    }
+    return html + '</div>';
+  } else if (widgetLayout === 'list') {
+    return header + '<div class="blog-list-container">' + shown.map(blogListCard).join('') + '</div>';
+  } else {
+    // Default grid
+    return header + '<div class="cards-grid">' + shown.map(blogGridCard).join('') + '</div>';
+  }
 }
 
 /* ===== INIT ===== */
