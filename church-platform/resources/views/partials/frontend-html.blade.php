@@ -158,6 +158,51 @@
     <div class="section-header"><h2 class="section-title">&#128197; Church Events</h2></div>
     <div class="cards-grid" id="all-events"></div>
   </div>
+  <!-- BLOG -->
+  <div class="page-section" id="page-blog">
+    <div class="section-header">
+      <h2 class="section-title">&#128240; Blog</h2>
+      <div class="blog-layout-toggle">
+        <button class="blog-layout-btn active" id="blog-grid-btn" onclick="setBlogLayout('grid')" title="Grid view">&#9638;&#9638;</button>
+        <button class="blog-layout-btn" id="blog-list-btn" onclick="setBlogLayout('list')" title="List view">&#9776;</button>
+      </div>
+    </div>
+    <div class="blog-search-row">
+      <div class="search-bar" style="flex:1">
+        <span>&#128269;</span>
+        <input placeholder="Search posts..." id="blog-search" oninput="filterBlogPosts()">
+      </div>
+    </div>
+    <div class="blog-main-layout">
+      <div class="blog-content-area">
+        <div class="filter-btns" id="blog-category-filters"></div>
+        <div class="cards-grid" id="blog-posts-container"></div>
+        <div class="blog-pagination" id="blog-pagination"></div>
+      </div>
+      <aside class="blog-sidebar" id="blog-sidebar">
+        <div class="sidebar-widget">
+          <h3 class="sidebar-title">Categories</h3>
+          <div class="sidebar-categories" id="sidebar-categories"></div>
+        </div>
+        <div class="sidebar-widget">
+          <h3 class="sidebar-title">Recent Posts</h3>
+          <div class="sidebar-recent" id="sidebar-recent"></div>
+        </div>
+        <div class="sidebar-widget">
+          <h3 class="sidebar-title">Tags</h3>
+          <div class="sidebar-tags" id="sidebar-tags"></div>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <!-- BLOG POST DETAIL -->
+  <div class="page-section" id="page-blog-detail">
+    <div class="blog-detail-container">
+      <button class="blog-back-btn" onclick="navigate('blog')">&#8592; Back to Blog</button>
+      <article class="blog-article" id="blog-article"></article>
+      <aside class="blog-sidebar blog-detail-sidebar" id="blog-detail-sidebar"></aside>
+    </div>
+  </div>
   <!-- PRAYERS -->
   <div class="page-section" id="page-prayers">
     <div class="section-header">

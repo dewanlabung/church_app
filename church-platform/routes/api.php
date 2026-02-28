@@ -50,6 +50,7 @@ Route::get('/events/upcoming', [EventController::class, 'upcoming']);
 Route::get('/posts/published', [PostController::class, 'published']);
 Route::get('/posts/featured', [PostController::class, 'featured']);
 Route::get('/posts/{slug}', [PostController::class, 'show']);
+Route::post('/posts/{slug}/view', [PostController::class, 'incrementView']);
 Route::get('/sermons/featured', [SermonController::class, 'featured']);
 Route::get('/sermons/{slug}', [SermonController::class, 'show']);
 Route::get('/books/featured', [BookController::class, 'featured']);

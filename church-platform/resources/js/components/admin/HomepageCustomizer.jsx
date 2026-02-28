@@ -6,7 +6,7 @@ const PHONE_FRAME_PAGES = {
     verse: { title: 'Verse of the Day', color: '#7c3aed', preview: '"For God so loved the world..." — John 3:16' },
     blessing: { title: "Today's Blessing", color: '#d97706', preview: 'May the Lord bless you and keep you...' },
     announcements: { title: 'Announcements', color: '#dc2626', preview: '📢 Sunday service at 10 AM • Wednesday Bible Study 7 PM' },
-    posts: { title: 'Latest News', color: '#2563eb', preview: '📰 3 latest posts shown here' },
+    posts: { title: 'Latest Blog Posts', color: '#2563eb', preview: '📰 Blog posts with grid/list/featured layouts' },
     prayers: { title: 'Prayer Requests', color: '#059669', preview: '🙏 Community prayer requests' },
     events: { title: 'Upcoming Events', color: '#7c3aed', preview: '📅 Next 3 upcoming events' },
     sermon: { title: 'Latest Sermon', color: '#be185d', preview: '🎙️ Most recent sermon' },
@@ -54,7 +54,7 @@ function DragItem({ widget, index, onDragStart, onDragOver, onDrop, onToggle, on
                     <span className="text-xs text-gray-400">#{index + 1}</span>
                 </div>
                 {widget.enabled && widget.settings && widget.settings.count !== undefined && (
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <label className="text-xs text-gray-500">Show:</label>
                         <select
                             value={widget.settings.count || 3}
@@ -66,6 +66,21 @@ function DragItem({ widget, index, onDragStart, onDragOver, onDrop, onToggle, on
                                 <option key={n} value={n}>{n} items</option>
                             ))}
                         </select>
+                        {widget.id === 'posts' && (
+                            <>
+                                <label className="text-xs text-gray-500 ml-2">Layout:</label>
+                                <select
+                                    value={widget.settings.layout || 'grid'}
+                                    onChange={(e) => onSettingChange(index, 'layout', e.target.value)}
+                                    className="text-xs border border-gray-200 rounded-md px-2 py-0.5 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <option value="grid">Grid</option>
+                                    <option value="list">List</option>
+                                    <option value="featured">Featured</option>
+                                </select>
+                            </>
+                        )}
                     </div>
                 )}
             </div>

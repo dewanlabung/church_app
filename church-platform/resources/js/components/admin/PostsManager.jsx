@@ -121,8 +121,31 @@ export default function PostsManager() {
         );
     };
 
+    const getPermalink = (post) => {
+        return window.location.origin + '/#/blog/' + (post.slug || '');
+    };
+
+    const copyLink = (post) => {
+        const url = getPermalink(post);
+        navigator.clipboard?.writeText(url).then(() => {
+            setAlert({ type: 'success', message: 'Permalink copied to clipboard!' });
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+            document.body.removeChild(ta);
+            setAlert({ type: 'success', message: 'Permalink copied to clipboard!' });
+        });
+    };
+
     const columns = [
-        { key: 'title', label: 'Title' },
+        {
+            key: 'title', label: 'Title', render: (r) => (
+                <div>
+                    <div className="font-medium text-gray-900">{r.title}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">/{r.slug}</div>
+                </div>
+            ),
+        },
         { key: 'category', label: 'Category' },
         { key: 'status', label: 'Status', render: (r) => statusBadge(r.status) },
         {
@@ -151,6 +174,10 @@ export default function PostsManager() {
             <div className="bg-white rounded-xl shadow-sm border">
                 <DataTable columns={columns} data={items} actions={(row) => (
                     <div className="flex gap-2">
+                        {row.status === 'published' && (
+                            <a href={getPermalink(row)} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                        )}
+                        <button onClick={() => copyLink(row)} className="text-gray-500 hover:text-gray-700 text-sm font-medium">Copy Link</button>
                         <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                         <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                     </div>
@@ -160,6 +187,14 @@ export default function PostsManager() {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit Post' : 'Add Post'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required placeholder="Post title" />
+                    {editing && editing.slug && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+                            <span className="text-xs text-gray-500 font-medium">Permalink:</span>
+                            <code className="text-xs text-indigo-600 flex-1 truncate">{getPermalink(editing)}</code>
+                            <button type="button" onClick={() => copyLink(editing)} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium whitespace-nowrap">Copy</button>
+                            <a href={getPermalink(editing)} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:text-green-800 font-medium whitespace-nowrap">View</a>
+                        </div>
+                    )}
                     <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} required placeholder="Post content..." />
                     <FormField label="Excerpt" name="excerpt" type="textarea" rows={2} value={form.excerpt} onChange={handleChange} placeholder="Brief summary..." />
                     <FormField label="Category" name="category" value={form.category} onChange={handleChange} placeholder="e.g. News, Devotional" />
