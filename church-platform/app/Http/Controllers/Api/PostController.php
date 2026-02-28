@@ -222,6 +222,20 @@ class PostController extends Controller
     }
 
     /**
+     * Increment the view count for a post by slug.
+     */
+    public function incrementView(string $slug): JsonResponse
+    {
+        $post = Post::where('slug', $slug)->firstOrFail();
+        $post->increment('view_count');
+
+        return response()->json([
+            'success' => true,
+            'view_count' => $post->view_count,
+        ]);
+    }
+
+    /**
      * Remove the specified post.
      */
     public function destroy(Post $post): JsonResponse

@@ -708,6 +708,12 @@ body::before {
 .blog-detail-body ul, .blog-detail-body ol { padding-left: 1.5rem; margin-bottom: 1rem; }
 .blog-detail-body li { margin-bottom: 0.4rem; }
 .blog-detail-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.blog-share-btn {
+  margin-left: auto; background: var(--gold-glow); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); padding: 4px 12px; color: var(--gold); font-family: var(--font-body);
+  font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.blog-share-btn:hover { background: var(--gold); color: var(--bg-primary); }
 /* Blog Featured Layout (Homepage Widget) */
 .blog-featured-layout { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.2rem; }
 .blog-featured-main {

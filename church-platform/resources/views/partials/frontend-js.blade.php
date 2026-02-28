@@ -66,7 +66,8 @@ function buildNav() {
   });
 }
 
-function navigate(page) {
+function navigate(page, opts) {
+  opts = opts || {};
   currentPage = page;
   PAGES.forEach(function(p) {
     document.getElementById('page-' + p).classList.toggle('active', p === page);
@@ -77,8 +78,39 @@ function navigate(page) {
   if (page === 'blog') loadBlogPage();
   buildNav();
   closeMobile();
+  // Update URL hash for permalink support
+  if (!opts.skipHash) {
+    if (page === 'blog-detail' && opts.slug) {
+      window.location.hash = '#/blog/' + opts.slug;
+    } else if (page === 'home') {
+      history.replaceState(null, '', window.location.pathname);
+    } else {
+      window.location.hash = '#/' + page;
+    }
+  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
+// Handle hash-based URL routing
+function handleHashRoute() {
+  var hash = window.location.hash;
+  if (!hash || hash === '#' || hash === '#/') { return; }
+  var path = hash.replace('#/', '').replace('#', '');
+  // Blog post permalink: #/blog/post-slug
+  if (path.indexOf('blog/') === 0) {
+    var slug = path.substring(5);
+    if (slug && slug !== '') {
+      viewBlogPost(slug);
+      return;
+    }
+  }
+  // Page navigation: #/events, #/blog, etc.
+  if (PAGES.indexOf(path) !== -1) {
+    navigate(path, { skipHash: true });
+  }
+}
+
+window.addEventListener('hashchange', handleHashRoute);
 
 /* ===== MOBILE MENU ===== */
 function toggleMobile() {
@@ -1409,6 +1441,7 @@ function viewBlogPost(slug) {
           return '<span class="blog-tag">' + esc(t.trim()) + '</span>';
         }).join('') + '</div>';
       }
+      var permalink = window.location.origin + '/#/blog/' + p.slug;
       article.innerHTML = img +
         '<div class="blog-detail-content">' +
         (p.category ? '<span class="card-badge badge-worship">' + esc(p.category) + '</span>' : '') +
@@ -1416,20 +1449,34 @@ function viewBlogPost(slug) {
         '<div class="blog-detail-meta">' +
         '<span>' + fmtDate(p.published_at || p.created_at) + '</span>' +
         (p.view_count ? '<span>&bull; ' + p.view_count + ' views</span>' : '') +
+        '<button class="blog-share-btn" onclick="copyPermalink(\'' + esc(permalink) + '\')" title="Copy link">&#128279; Share</button>' +
         '</div>' +
         '<div class="blog-detail-body">' + (p.content || '') + '</div>' +
         tags +
         '</div>';
-      // Navigate to blog-detail
+      // Navigate to blog-detail with permalink
       currentPage = 'blog-detail';
       PAGES.forEach(function(pg) {
         document.getElementById('page-' + pg).classList.remove('active');
       });
       document.getElementById('page-blog-detail').classList.add('active');
+      window.location.hash = '#/blog/' + p.slug;
       buildNav();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Increment view count
+      apiCall('/posts/' + p.slug + '/view', { method: 'POST' }).catch(function() {});
     }
   });
+}
+
+function copyPermalink(url) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(function() { showToast('Link copied to clipboard!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = url; document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showToast('Link copied to clipboard!');
+  }
 }
 
 /* ===== HOMEPAGE BLOG WIDGET (ENHANCED) ===== */
@@ -1484,6 +1531,8 @@ Promise.allSettled([
 ]).then(function() {
   // Apply widget layout after all content is loaded to avoid race conditions
   applyWidgetLayout();
+  // Handle permalink routing on initial load
+  handleHashRoute();
 });
 document.querySelectorAll('.modal-overlay').forEach(function(m) {
   m.addEventListener('click', function(e) { if (e.target === m) m.classList.remove('open'); });
