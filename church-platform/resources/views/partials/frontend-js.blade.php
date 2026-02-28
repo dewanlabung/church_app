@@ -1519,6 +1519,252 @@ function renderHomePosts(posts, layout) {
   }
 }
 
+/* ===== MOBILE THEME ===== */
+var mobileThemeConfig = null;
+
+function loadMobileTheme() {
+  return apiCall('/mobile-theme').then(function(res) {
+    if (res && res.success && res.data) {
+      mobileThemeConfig = res.data;
+      if (res.data.enabled && res.data.config) {
+        applyMobileTheme(res.data.config);
+      }
+    }
+  }).catch(function() {});
+}
+
+function applyMobileTheme(cfg) {
+  var isMobile = window.innerWidth <= 900;
+  var root = document.documentElement;
+
+  // Font size
+  if (cfg.font_size) {
+    var sizes = { small: '14px', medium: '16px', large: '18px' };
+    root.style.setProperty('--mobile-font-size', sizes[cfg.font_size] || '16px');
+    if (isMobile) document.body.style.fontSize = sizes[cfg.font_size] || '16px';
+  }
+
+  // Card style
+  if (cfg.card_style) {
+    var cardStyles = {
+      rounded: { radius: 'var(--radius-lg)', shadow: 'var(--shadow-sm)', border: '1px solid var(--border)' },
+      flat: { radius: '4px', shadow: 'none', border: '1px solid var(--border)' },
+      elevated: { radius: 'var(--radius-lg)', shadow: 'var(--shadow-md)', border: 'none' }
+    };
+    var cs = cardStyles[cfg.card_style] || cardStyles.rounded;
+    root.style.setProperty('--card-radius', cs.radius);
+    root.style.setProperty('--card-shadow', cs.shadow);
+    root.style.setProperty('--card-border', cs.border);
+    // Apply to existing cards
+    document.querySelectorAll('.card, .sidebar-widget, .blog-card, .blog-list-item, .info-card, .sermon-card, .book-card').forEach(function(el) {
+      el.style.borderRadius = cs.radius;
+      el.style.boxShadow = cs.shadow;
+      if (cs.border !== 'none') el.style.border = cs.border;
+    });
+  }
+
+  // Header style
+  if (cfg.header_style && isMobile) {
+    var nav = document.querySelector('.nav-bar');
+    if (nav) {
+      if (cfg.header_style === 'large') {
+        nav.style.padding = '0 1.5rem';
+        var inner = nav.querySelector('.nav-inner');
+        if (inner) inner.style.height = '72px';
+      } else if (cfg.header_style === 'compact') {
+        var inner2 = nav.querySelector('.nav-inner');
+        if (inner2) inner2.style.height = '50px';
+      }
+    }
+  }
+
+  // Bottom navigation for mobile
+  if (cfg.bottom_nav && isMobile) {
+    buildBottomNav(cfg.bottom_nav);
+  }
+
+  // Quick actions
+  if (cfg.quick_actions && isMobile) {
+    buildQuickActions(cfg.quick_actions);
+  }
+
+  // Pull to refresh
+  if (cfg.enable_pull_refresh && isMobile) {
+    initPullToRefresh();
+  }
+
+  // Swipe navigation
+  if (cfg.enable_swipe_nav && isMobile) {
+    initSwipeNav();
+  }
+
+  // Splash screen config for PWA
+  if (cfg.splash_screen) {
+    root.style.setProperty('--splash-bg', cfg.splash_screen.background_color || '#4F46E5');
+    root.style.setProperty('--splash-text', cfg.splash_screen.text_color || '#ffffff');
+  }
+}
+
+function buildBottomNav(navItems) {
+  var existing = document.getElementById('mobile-bottom-nav');
+  if (existing) existing.remove();
+
+  var enabledItems = navItems.filter(function(n) { return n.enabled; }).slice(0, 5);
+  if (enabledItems.length === 0) return;
+
+  var nav = document.createElement('nav');
+  nav.id = 'mobile-bottom-nav';
+  nav.className = 'mobile-bottom-nav';
+
+  var routeMap = {
+    '/': 'home', '/sermons': 'sermons', '/events': 'events', '/prayers': 'prayers',
+    '/blog': 'blog', '/giving': 'giving', '/library': 'library', '/studies': 'studies',
+    '/ministries': 'ministries', '/reviews': 'reviews', '/testimonies': 'testimonies',
+    '/contact': 'contact', '/about': 'about', '/menu': ''
+  };
+
+  enabledItems.forEach(function(item) {
+    var btn = document.createElement('button');
+    btn.className = 'bottom-nav-item';
+    var page = routeMap[item.route] || item.id;
+    if (page === currentPage) btn.classList.add('active');
+    btn.onclick = function() {
+      if (item.route === '/menu') {
+        toggleMobile();
+      } else {
+        navigate(page);
+        updateBottomNav(page);
+      }
+    };
+    btn.innerHTML = '<span class="bottom-nav-icon"><i class="fas ' + item.icon + '"></i></span>' +
+      '<span class="bottom-nav-label">' + item.label + '</span>';
+    nav.appendChild(btn);
+  });
+
+  document.body.appendChild(nav);
+  // Add padding at bottom for content not to be hidden
+  document.body.style.paddingBottom = '65px';
+}
+
+function updateBottomNav(activePage) {
+  var items = document.querySelectorAll('.bottom-nav-item');
+  items.forEach(function(item, i) {
+    item.classList.remove('active');
+  });
+  // Re-check which is active
+  var nav = document.getElementById('mobile-bottom-nav');
+  if (!nav || !mobileThemeConfig || !mobileThemeConfig.config || !mobileThemeConfig.config.bottom_nav) return;
+  var routeMap = {
+    '/': 'home', '/sermons': 'sermons', '/events': 'events', '/prayers': 'prayers',
+    '/blog': 'blog', '/giving': 'giving', '/library': 'library', '/studies': 'studies',
+    '/ministries': 'ministries', '/reviews': 'reviews', '/testimonies': 'testimonies',
+    '/contact': 'contact', '/about': 'about'
+  };
+  var enabled = mobileThemeConfig.config.bottom_nav.filter(function(n) { return n.enabled; });
+  var buttons = nav.querySelectorAll('.bottom-nav-item');
+  enabled.forEach(function(item, idx) {
+    var page = routeMap[item.route] || item.id;
+    if (page === activePage && buttons[idx]) buttons[idx].classList.add('active');
+  });
+}
+
+function buildQuickActions(actions) {
+  var enabled = actions.filter(function(a) { return a.enabled; });
+  if (enabled.length === 0) return;
+
+  var existing = document.getElementById('mobile-quick-actions');
+  if (existing) existing.remove();
+
+  var container = document.createElement('div');
+  container.id = 'mobile-quick-actions';
+  container.className = 'quick-actions-bar';
+
+  var actionMap = {
+    'donate': 'giving', 'prayer-request': 'prayers', 'contact': 'contact',
+    'bible-studies': 'studies', 'sermons': 'sermons', 'events': 'events', 'blog': 'blog'
+  };
+
+  enabled.forEach(function(act) {
+    var btn = document.createElement('button');
+    btn.className = 'quick-action-btn';
+    btn.innerHTML = '<i class="fas ' + act.icon + '"></i><span>' + act.label + '</span>';
+    btn.onclick = function() {
+      var page = actionMap[act.action] || act.action;
+      if (PAGES.indexOf(page) !== -1) navigate(page);
+    };
+    container.appendChild(btn);
+  });
+
+  // Insert after hero section on home page
+  var homeSection = document.getElementById('page-home');
+  if (homeSection) {
+    var hero = homeSection.querySelector('.hero-section');
+    if (hero) hero.after(container);
+    else homeSection.prepend(container);
+  }
+}
+
+function initPullToRefresh() {
+  var startY = 0;
+  var pulling = false;
+  document.addEventListener('touchstart', function(e) {
+    if (window.scrollY === 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e) {
+    if (!pulling) return;
+    var diff = e.touches[0].clientY - startY;
+    if (diff > 80) {
+      pulling = false;
+      window.location.reload();
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', function() { pulling = false; }, { passive: true });
+}
+
+function initSwipeNav() {
+  var startX = 0;
+  var startY = 0;
+  document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var diffX = e.changedTouches[0].clientX - startX;
+    var diffY = e.changedTouches[0].clientY - startY;
+    if (Math.abs(diffX) > 80 && Math.abs(diffX) > Math.abs(diffY) * 2) {
+      var idx = PAGES.indexOf(currentPage);
+      if (idx === -1) return;
+      if (diffX > 0 && idx > 0) navigate(PAGES[idx - 1]);
+      else if (diffX < 0 && idx < PAGES.length - 1) navigate(PAGES[idx + 1]);
+    }
+  }, { passive: true });
+}
+
+// Load PWA config and update meta tags
+function loadPwaConfig() {
+  return apiCall('/pwa-config').then(function(res) {
+    if (res && res.success && res.data) {
+      var d = res.data;
+      // Update theme-color meta tag
+      var themeMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeMeta && d.pwa_theme_color) themeMeta.content = d.pwa_theme_color;
+      // Update apple meta tags
+      var appleName = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (appleName && d.pwa_name) appleName.content = d.pwa_name;
+    }
+  }).catch(function() {});
+}
+
+// Re-apply bottom nav highlight when navigating
+var _origNavigate = navigate;
+navigate = function(page, opts) {
+  _origNavigate(page, opts);
+  if (window.innerWidth <= 900) updateBottomNav(page);
+};
+
 /* ===== INIT ===== */
 buildNav();
 buildStarInput();
@@ -1527,7 +1773,8 @@ updateAuthUI();
 Promise.allSettled([
   loadWidgetConfig(),
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
-  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries()
+  loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries(),
+  loadMobileTheme(), loadPwaConfig()
 ]).then(function() {
   // Apply widget layout after all content is loaded to avoid race conditions
   applyWidgetLayout();

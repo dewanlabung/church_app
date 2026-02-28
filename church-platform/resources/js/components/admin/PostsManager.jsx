@@ -155,6 +155,9 @@ export default function PostsManager() {
                 </span>
             ),
         },
+        { key: 'view_count', label: 'Views', render: (r) => (
+            <span className="text-sm text-gray-600">{r.view_count || 0}</span>
+        )},
         { key: 'published_at', label: 'Published', render: (r) => r.published_at ? new Date(r.published_at).toLocaleDateString() : 'Not published' },
     ];
 

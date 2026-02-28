@@ -78,6 +78,41 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 // Sitemap (SEO)
 Route::get('/sitemap.xml', [\App\Http\Controllers\Api\SitemapController::class, 'index'])->name('sitemap');
 
+// Dynamic PWA Manifest
+Route::get('/manifest.json', function () {
+    $setting = \App\Models\Setting::first();
+    $manifest = [
+        'name' => $setting->pwa_name ?? $setting->church_name ?? config('app.name', 'Grace Community Church'),
+        'short_name' => $setting->pwa_short_name ?? 'Church',
+        'description' => $setting->pwa_description ?? 'Your church community app - worship, events, prayer, and more.',
+        'start_url' => '/',
+        'display' => $setting->pwa_display ?? 'standalone',
+        'background_color' => $setting->pwa_background_color ?? '#0C0E12',
+        'theme_color' => $setting->pwa_theme_color ?? '#0C0E12',
+        'orientation' => $setting->pwa_orientation ?? 'portrait-primary',
+        'icons' => [
+            [
+                'src' => $setting->pwa_icon_192 ? '/storage/' . $setting->pwa_icon_192 : '/images/icon-192.png',
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+            [
+                'src' => $setting->pwa_icon_512 ? '/storage/' . $setting->pwa_icon_512 : '/images/icon-512.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable',
+            ],
+        ],
+        'categories' => ['lifestyle', 'social'],
+        'lang' => 'en',
+    ];
+
+    return response()->json($manifest)
+        ->header('Content-Type', 'application/manifest+json')
+        ->header('Cache-Control', 'public, max-age=3600');
+});
+
 // Frontend catch-all (SPA)
 Route::get('/{any?}', function () {
     return view('welcome');
