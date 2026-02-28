@@ -21,6 +21,46 @@ function SectionHeader({ icon, title, description }) {
 export default function SettingsManager() {
     const [activeTab, setActiveTab] = useState('general');
 
+    // Auth provider settings
+    const [authForm, setAuthForm] = useState({
+        auth_google_enabled: false,
+        auth_google_client_id: '',
+        auth_google_client_secret: '',
+        auth_facebook_enabled: false,
+        auth_facebook_client_id: '',
+        auth_facebook_client_secret: '',
+    });
+    const [authSaving, setAuthSaving] = useState(false);
+
+    // Storage settings
+    const [storageForm, setStorageForm] = useState({
+        storage_driver: 'local',
+        storage_s3_key: '',
+        storage_s3_secret: '',
+        storage_s3_region: '',
+        storage_s3_bucket: '',
+        max_upload_size: 10,
+        allowed_file_types: 'jpg,jpeg,png,gif,webp,svg,pdf,mp3,mp4',
+    });
+    const [storageSaving, setStorageSaving] = useState(false);
+
+    // Cache/Performance settings
+    const [cacheForm, setCacheForm] = useState({
+        cache_driver: 'file',
+        cache_ttl: 3600,
+        enable_page_cache: false,
+        enable_minification: false,
+        cdn_url: '',
+    });
+    const [cacheSaving, setCacheSaving] = useState(false);
+
+    // Logging settings
+    const [loggingForm, setLoggingForm] = useState({
+        log_channel: 'daily',
+        queue_driver: 'sync',
+    });
+    const [loggingSaving, setLoggingSaving] = useState(false);
+
     // Email settings state
     const [emailForm, setEmailForm] = useState({
         mail_provider: 'smtp',
@@ -87,7 +127,110 @@ export default function SettingsManager() {
     useEffect(() => {
         fetchSettings();
         fetchEmailSettings();
+        fetchExtendedSettings();
     }, []);
+
+    const fetchExtendedSettings = async () => {
+        try {
+            const data = await get('/api/settings');
+            const s = data.data || data;
+            if (s) {
+                setAuthForm(prev => ({
+                    ...prev,
+                    auth_google_enabled: s.auth_google_enabled ?? false,
+                    auth_google_client_id: s.auth_google_client_id || '',
+                    auth_google_client_secret: s.auth_google_client_secret ? '********' : '',
+                    auth_facebook_enabled: s.auth_facebook_enabled ?? false,
+                    auth_facebook_client_id: s.auth_facebook_client_id || '',
+                    auth_facebook_client_secret: s.auth_facebook_client_secret ? '********' : '',
+                }));
+                setStorageForm(prev => ({
+                    ...prev,
+                    storage_driver: s.storage_driver || 'local',
+                    storage_s3_key: s.storage_s3_key || '',
+                    storage_s3_secret: s.storage_s3_secret ? '********' : '',
+                    storage_s3_region: s.storage_s3_region || '',
+                    storage_s3_bucket: s.storage_s3_bucket || '',
+                    max_upload_size: s.max_upload_size || 10,
+                    allowed_file_types: s.allowed_file_types || 'jpg,jpeg,png,gif,webp,svg,pdf,mp3,mp4',
+                }));
+                setCacheForm(prev => ({
+                    ...prev,
+                    cache_driver: s.cache_driver || 'file',
+                    cache_ttl: s.cache_ttl || 3600,
+                    enable_page_cache: s.enable_page_cache ?? false,
+                    enable_minification: s.enable_minification ?? false,
+                    cdn_url: s.cdn_url || '',
+                }));
+                setLoggingForm(prev => ({
+                    ...prev,
+                    log_channel: s.log_channel || 'daily',
+                    queue_driver: s.queue_driver || 'sync',
+                }));
+            }
+        } catch (e) { /* silently fail */ }
+    };
+
+    const handleSaveAuth = async () => {
+        setAuthSaving(true);
+        try {
+            const payload = { ...authForm };
+            if (payload.auth_google_client_secret === '********') delete payload.auth_google_client_secret;
+            if (payload.auth_facebook_client_secret === '********') delete payload.auth_facebook_client_secret;
+            const fd = new FormData();
+            Object.entries(payload).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+            fd.append('_method', 'PUT');
+            await upload('/api/settings', fd, 'POST');
+            setAlert({ type: 'success', message: 'Authentication settings saved.' });
+        } catch (e) {
+            setAlert({ type: 'error', message: 'Failed: ' + e.message });
+        }
+        setAuthSaving(false);
+    };
+
+    const handleSaveStorage = async () => {
+        setStorageSaving(true);
+        try {
+            const payload = { ...storageForm };
+            if (payload.storage_s3_secret === '********') delete payload.storage_s3_secret;
+            const fd = new FormData();
+            Object.entries(payload).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+            fd.append('_method', 'PUT');
+            await upload('/api/settings', fd, 'POST');
+            setAlert({ type: 'success', message: 'Storage settings saved.' });
+        } catch (e) {
+            setAlert({ type: 'error', message: 'Failed: ' + e.message });
+        }
+        setStorageSaving(false);
+    };
+
+    const handleSaveCache = async () => {
+        setCacheSaving(true);
+        try {
+            const fd = new FormData();
+            Object.entries(cacheForm).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+            fd.append('_method', 'PUT');
+            await upload('/api/settings', fd, 'POST');
+            setAlert({ type: 'success', message: 'Cache settings saved.' });
+        } catch (e) {
+            setAlert({ type: 'error', message: 'Failed: ' + e.message });
+        }
+        setCacheSaving(false);
+    };
+
+    const handleSaveLogging = async () => {
+        setLoggingSaving(true);
+        try {
+            const fd = new FormData();
+            Object.entries(loggingForm).forEach(([k, v]) => { if (v !== null && v !== undefined) fd.append(k, v); });
+            fd.append('_method', 'PUT');
+            await upload('/api/settings', fd, 'POST');
+            setAlert({ type: 'success', message: 'Logging & Queue settings saved.' });
+        } catch (e) {
+            setAlert({ type: 'error', message: 'Failed: ' + e.message });
+        }
+        setLoggingSaving(false);
+    };
 
     const fetchSettings = async () => {
         setLoading(true);
@@ -234,19 +377,24 @@ export default function SettingsManager() {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit">
-                <button
-                    onClick={() => setActiveTab('general')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'general' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    General
-                </button>
-                <button
-                    onClick={() => setActiveTab('email')}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'email' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                >
-                    Email Settings
-                </button>
+            <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1 w-fit flex-wrap">
+                {[
+                    { id: 'general', label: 'General', icon: 'fa-cog' },
+                    { id: 'email', label: 'Mail', icon: 'fa-envelope' },
+                    { id: 'authentication', label: 'Authentication', icon: 'fa-key' },
+                    { id: 'storage', label: 'Uploading', icon: 'fa-cloud-upload-alt' },
+                    { id: 'cache', label: 'Cache', icon: 'fa-bolt' },
+                    { id: 'logging', label: 'Logging & Queue', icon: 'fa-stream' },
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        <i className={`fas ${tab.icon} text-xs`}></i>
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
             {/* EMAIL SETTINGS TAB */}
@@ -676,6 +824,198 @@ export default function SettingsManager() {
                 </div>
             </form>
             </div>)}
+
+            {/* AUTHENTICATION TAB */}
+            {activeTab === 'authentication' && (
+                <div>
+                    <Alert {...alert} onClose={() => setAlert(null)} />
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>}
+                            title="Google Login"
+                            description="Allow users to sign in with their Google account"
+                        />
+                        <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                            <input type="checkbox" checked={authForm.auth_google_enabled} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_google_enabled: e.target.checked }))} className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
+                            <span className="text-sm font-medium text-gray-700">Enable Google Login</span>
+                        </label>
+                        {authForm.auth_google_enabled && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <FormField label="Google Client ID" name="auth_google_client_id" value={authForm.auth_google_client_id} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_google_client_id: e.target.value }))} placeholder="Your Google OAuth Client ID" />
+                                <FormField label="Google Client Secret" name="auth_google_client_secret" type="password" value={authForm.auth_google_client_secret} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_google_client_secret: e.target.value }))} placeholder="Leave blank to keep current" />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+                            title="Facebook Login"
+                            description="Allow users to sign in with their Facebook account"
+                        />
+                        <label className="flex items-center gap-3 mb-4 cursor-pointer">
+                            <input type="checkbox" checked={authForm.auth_facebook_enabled} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_facebook_enabled: e.target.checked }))} className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
+                            <span className="text-sm font-medium text-gray-700">Enable Facebook Login</span>
+                        </label>
+                        {authForm.auth_facebook_enabled && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                                <FormField label="Facebook App ID" name="auth_facebook_client_id" value={authForm.auth_facebook_client_id} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_facebook_client_id: e.target.value }))} placeholder="Your Facebook App ID" />
+                                <FormField label="Facebook App Secret" name="auth_facebook_client_secret" type="password" value={authForm.auth_facebook_client_secret} onChange={(e) => setAuthForm(prev => ({ ...prev, auth_facebook_client_secret: e.target.value }))} placeholder="Leave blank to keep current" />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end pb-4">
+                        <button onClick={handleSaveAuth} disabled={authSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {authSaving ? 'Saving...' : 'Save Auth Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* STORAGE / UPLOADING TAB */}
+            {activeTab === 'storage' && (
+                <div>
+                    <Alert {...alert} onClose={() => setAlert(null)} />
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>}
+                            title="File Storage"
+                            description="Configure where uploaded files are stored"
+                        />
+                        <FormField label="Storage Driver" name="storage_driver" type="select" value={storageForm.storage_driver} onChange={(e) => setStorageForm(prev => ({ ...prev, storage_driver: e.target.value }))} options={[
+                            { value: 'local', label: 'Local Disk (Default)' },
+                            { value: 's3', label: 'Amazon S3 / S3-Compatible' },
+                        ]} />
+
+                        {storageForm.storage_driver === 's3' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mt-4">
+                                <FormField label="S3 Access Key" name="storage_s3_key" value={storageForm.storage_s3_key} onChange={(e) => setStorageForm(prev => ({ ...prev, storage_s3_key: e.target.value }))} placeholder="AKIAIOSFODNN7EXAMPLE" />
+                                <FormField label="S3 Secret Key" name="storage_s3_secret" type="password" value={storageForm.storage_s3_secret} onChange={(e) => setStorageForm(prev => ({ ...prev, storage_s3_secret: e.target.value }))} placeholder="Leave blank to keep current" />
+                                <FormField label="S3 Region" name="storage_s3_region" value={storageForm.storage_s3_region} onChange={(e) => setStorageForm(prev => ({ ...prev, storage_s3_region: e.target.value }))} placeholder="us-east-1" />
+                                <FormField label="S3 Bucket Name" name="storage_s3_bucket" value={storageForm.storage_s3_bucket} onChange={(e) => setStorageForm(prev => ({ ...prev, storage_s3_bucket: e.target.value }))} placeholder="my-church-uploads" />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                            title="Upload Limits"
+                            description="Control what files can be uploaded"
+                        />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                            <FormField label="Max Upload Size (MB)" name="max_upload_size" type="number" value={storageForm.max_upload_size} onChange={(e) => setStorageForm(prev => ({ ...prev, max_upload_size: parseInt(e.target.value) || 10 }))} />
+                            <FormField label="Allowed File Types" name="allowed_file_types" value={storageForm.allowed_file_types} onChange={(e) => setStorageForm(prev => ({ ...prev, allowed_file_types: e.target.value }))} placeholder="jpg,jpeg,png,gif,pdf,mp3" />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pb-4">
+                        <button onClick={handleSaveStorage} disabled={storageSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {storageSaving ? 'Saving...' : 'Save Storage Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* CACHE / PERFORMANCE TAB */}
+            {activeTab === 'cache' && (
+                <div>
+                    <Alert {...alert} onClose={() => setAlert(null)} />
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>}
+                            title="Cache Configuration"
+                            description="Configure caching for better performance"
+                        />
+                        <FormField label="Cache Driver" name="cache_driver" type="select" value={cacheForm.cache_driver} onChange={(e) => setCacheForm(prev => ({ ...prev, cache_driver: e.target.value }))} options={[
+                            { value: 'file', label: 'File (Default)' },
+                            { value: 'database', label: 'Database' },
+                            { value: 'redis', label: 'Redis' },
+                            { value: 'memcached', label: 'Memcached' },
+                        ]} />
+                        <FormField label="Cache TTL (seconds)" name="cache_ttl" type="number" value={cacheForm.cache_ttl} onChange={(e) => setCacheForm(prev => ({ ...prev, cache_ttl: parseInt(e.target.value) || 3600 }))} />
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>}
+                            title="Performance Optimization"
+                            description="Additional performance settings"
+                        />
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={cacheForm.enable_page_cache} onChange={(e) => setCacheForm(prev => ({ ...prev, enable_page_cache: e.target.checked }))} className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700">Enable Page Cache</span>
+                                    <p className="text-xs text-gray-500">Cache full HTML pages for faster load times</p>
+                                </div>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" checked={cacheForm.enable_minification} onChange={(e) => setCacheForm(prev => ({ ...prev, enable_minification: e.target.checked }))} className="w-4 h-4 text-indigo-600 rounded border-gray-300" />
+                                <div>
+                                    <span className="text-sm font-medium text-gray-700">Enable Asset Minification</span>
+                                    <p className="text-xs text-gray-500">Minify CSS and JS for smaller file sizes</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div className="mt-4">
+                            <FormField label="CDN URL (optional)" name="cdn_url" value={cacheForm.cdn_url} onChange={(e) => setCacheForm(prev => ({ ...prev, cdn_url: e.target.value }))} placeholder="https://cdn.yourdomain.com" />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pb-4">
+                        <button onClick={handleSaveCache} disabled={cacheSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {cacheSaving ? 'Saving...' : 'Save Cache Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* LOGGING & QUEUE TAB */}
+            {activeTab === 'logging' && (
+                <div>
+                    <Alert {...alert} onClose={() => setAlert(null)} />
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>}
+                            title="Logging"
+                            description="Configure application error logging"
+                        />
+                        <FormField label="Log Channel" name="log_channel" type="select" value={loggingForm.log_channel} onChange={(e) => setLoggingForm(prev => ({ ...prev, log_channel: e.target.value }))} options={[
+                            { value: 'daily', label: 'Daily Files (Recommended)' },
+                            { value: 'single', label: 'Single File' },
+                            { value: 'stack', label: 'Stack (Multiple Channels)' },
+                            { value: 'syslog', label: 'System Log' },
+                            { value: 'errorlog', label: 'Error Log' },
+                        ]} />
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+                            title="Queue"
+                            description="Configure background job processing"
+                        />
+                        <FormField label="Queue Driver" name="queue_driver" type="select" value={loggingForm.queue_driver} onChange={(e) => setLoggingForm(prev => ({ ...prev, queue_driver: e.target.value }))} options={[
+                            { value: 'sync', label: 'Synchronous (Default - No Queue)' },
+                            { value: 'database', label: 'Database' },
+                            { value: 'redis', label: 'Redis' },
+                        ]} />
+                        <p className="text-xs text-gray-500 mt-2">
+                            <i className="fas fa-info-circle mr-1"></i>
+                            Queue processing is used for sending emails and newsletters in the background.
+                            If using Database or Redis, make sure to run <code className="bg-gray-100 px-1 rounded">php artisan queue:work</code>.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-end pb-4">
+                        <button onClick={handleSaveLogging} disabled={loggingSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {loggingSaving ? 'Saving...' : 'Save Logging & Queue Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

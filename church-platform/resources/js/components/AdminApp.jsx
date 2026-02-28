@@ -23,6 +23,10 @@ import RolesManager from './admin/RolesManager';
 import TestimoniesManager from './admin/TestimoniesManager';
 import HomepageCustomizer from './admin/HomepageCustomizer';
 import SystemManager from './admin/SystemManager';
+import AppearanceManager from './admin/AppearanceManager';
+import MobileThemeManager from './admin/MobileThemeManager';
+import LocalizationManager from './admin/LocalizationManager';
+import ProfileManager from './admin/ProfileManager';
 
 const components = {
     'verses': VersesManager,
@@ -50,6 +54,10 @@ const components = {
     'testimonies': TestimoniesManager,
     'homepage': HomepageCustomizer,
     'system': SystemManager,
+    'appearance': AppearanceManager,
+    'mobile-theme': MobileThemeManager,
+    'translations': LocalizationManager,
+    'profile': ProfileManager,
 };
 
 export default function AdminApp({ section }) {

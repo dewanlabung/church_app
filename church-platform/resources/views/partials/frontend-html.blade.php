@@ -22,6 +22,7 @@
               <div class="auth-dropdown-email" id="auth-dropdown-email"></div>
             </div>
             <div class="auth-dropdown-divider"></div>
+            <button class="auth-dropdown-item" onclick="openProfileEdit()">Edit Profile</button>
             <button class="auth-dropdown-item" onclick="doLogout()">Sign Out</button>
           </div>
         </div>
@@ -45,6 +46,9 @@
       <div class="mobile-nav-item" style="cursor:default;color:var(--gold)">
         <span class="mobile-nav-icon">&#128100;</span><span id="mobile-user-name"></span>
       </div>
+      <button class="mobile-nav-item" onclick="openProfileEdit(); closeMobile()">
+        <span class="mobile-nav-icon">&#9998;</span>Edit Profile
+      </button>
       <button class="mobile-nav-item" onclick="doLogout(); closeMobile()">
         <span class="mobile-nav-icon">&#128682;</span>Sign Out
       </button>
@@ -407,7 +411,39 @@
         </a>
       </div>
       <div class="auth-switch">
+        <button onclick="showForgotForm()">Forgot Password?</button> &middot;
         Don't have an account? <button onclick="showRegisterForm()">Sign Up</button>
+      </div>
+    </div>
+    <!-- Forgot Password Form -->
+    <div id="auth-forgot-form" style="display:none">
+      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:1rem">Enter your email and we'll send you a reset link.</p>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="forgot-email-input" type="email" placeholder="Enter your email">
+      </div>
+      <div id="forgot-error" class="auth-error" style="display:none"></div>
+      <div id="forgot-success" style="display:none;color:var(--accent-green);font-size:0.88rem;margin-bottom:0.8rem;padding:8px 12px;background:rgba(74,155,106,0.1);border-radius:8px"></div>
+      <button class="btn-primary" id="forgot-submit-btn-fe" onclick="doForgotPassword()">Send Reset Link</button>
+      <div class="auth-switch">
+        Remember your password? <button onclick="showLoginForm()">Sign In</button>
+      </div>
+    </div>
+    <!-- Reset Password Form (shown when token is in URL) -->
+    <div id="auth-reset-form" style="display:none">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input class="form-input" id="reset-password-input" type="password" placeholder="New password (min 8 characters)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input class="form-input" id="reset-password-confirm" type="password" placeholder="Confirm new password">
+      </div>
+      <div id="reset-error" class="auth-error" style="display:none"></div>
+      <div id="reset-success" style="display:none;color:var(--accent-green);font-size:0.88rem;margin-bottom:0.8rem;padding:8px 12px;background:rgba(74,155,106,0.1);border-radius:8px"></div>
+      <button class="btn-primary" id="reset-submit-btn" onclick="doResetPassword()">Reset Password</button>
+      <div class="auth-switch">
+        <button onclick="showLoginForm()">Back to Sign In</button>
       </div>
     </div>
     <!-- Register Form -->
@@ -498,6 +534,37 @@
       <input class="form-input" id="newsletter-footer-email" type="email" placeholder="Your email address" style="flex:1;min-width:200px">
       <button class="btn-primary" style="width:auto;padding:10px 24px;white-space:nowrap" onclick="submitFooterNewsletter()">Subscribe</button>
     </div>
+  </div>
+</div>
+<!-- PROFILE EDIT MODAL -->
+<div class="modal-overlay" id="modal-profile">
+  <div class="modal-content auth-modal">
+    <div class="modal-title">
+      <span>Edit Profile</span>
+      <button class="modal-close" onclick="closeModal('profile')">&#10005;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input class="form-input" id="profile-name" type="text" placeholder="Your full name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" id="profile-email" type="email" placeholder="Your email">
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1rem 0;padding-top:1rem">
+      <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:0.8rem">Leave password fields empty to keep current password.</p>
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input class="form-input" id="profile-password" type="password" placeholder="New password (optional)">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm New Password</label>
+        <input class="form-input" id="profile-password-confirm" type="password" placeholder="Confirm new password">
+      </div>
+    </div>
+    <div id="profile-error" class="auth-error" style="display:none"></div>
+    <div id="profile-success" style="display:none;color:var(--accent-green);font-size:0.88rem;margin-bottom:0.8rem;padding:8px 12px;background:rgba(74,155,106,0.1);border-radius:8px"></div>
+    <button class="btn-primary" id="profile-submit-btn" onclick="doUpdateProfile()">Save Changes</button>
   </div>
 </div>
 <!-- TOAST -->

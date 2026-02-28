@@ -638,20 +638,106 @@ document.addEventListener('click', function(e) {
   }
 });
 
-function showLoginForm() {
-  document.getElementById('auth-login-form').style.display = '';
+function hideAllAuthForms() {
+  document.getElementById('auth-login-form').style.display = 'none';
   document.getElementById('auth-register-form').style.display = 'none';
-  document.getElementById('auth-modal-title').textContent = 'Sign In';
+  document.getElementById('auth-forgot-form').style.display = 'none';
+  document.getElementById('auth-reset-form').style.display = 'none';
   document.getElementById('auth-error').style.display = 'none';
   document.getElementById('reg-error').style.display = 'none';
+  var fe = document.getElementById('forgot-error'); if (fe) fe.style.display = 'none';
+  var fs = document.getElementById('forgot-success'); if (fs) fs.style.display = 'none';
+  var re = document.getElementById('reset-error'); if (re) re.style.display = 'none';
+  var rs = document.getElementById('reset-success'); if (rs) rs.style.display = 'none';
+}
+
+function showLoginForm() {
+  hideAllAuthForms();
+  document.getElementById('auth-login-form').style.display = '';
+  document.getElementById('auth-modal-title').textContent = 'Sign In';
 }
 
 function showRegisterForm() {
-  document.getElementById('auth-login-form').style.display = 'none';
+  hideAllAuthForms();
   document.getElementById('auth-register-form').style.display = '';
   document.getElementById('auth-modal-title').textContent = 'Create Account';
-  document.getElementById('auth-error').style.display = 'none';
-  document.getElementById('reg-error').style.display = 'none';
+}
+
+function showForgotForm() {
+  hideAllAuthForms();
+  document.getElementById('auth-forgot-form').style.display = '';
+  document.getElementById('auth-modal-title').textContent = 'Forgot Password';
+}
+
+function showResetForm() {
+  hideAllAuthForms();
+  document.getElementById('auth-reset-form').style.display = '';
+  document.getElementById('auth-modal-title').textContent = 'Reset Password';
+}
+
+function doForgotPassword() {
+  var email = document.getElementById('forgot-email-input').value.trim();
+  var errEl = document.getElementById('forgot-error');
+  var succEl = document.getElementById('forgot-success');
+  errEl.style.display = 'none';
+  succEl.style.display = 'none';
+
+  if (!email) { errEl.textContent = 'Please enter your email.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('forgot-submit-btn-fe');
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  apiCall('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email: email })
+  }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'Send Reset Link';
+    succEl.textContent = (res && res.message) || 'If that email exists, a reset link has been sent.';
+    succEl.style.display = '';
+  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Send Reset Link';
+    errEl.textContent = 'Something went wrong. Please try again.';
+    errEl.style.display = '';
+  });
+}
+
+function doResetPassword() {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token');
+  var email = params.get('email');
+  var password = document.getElementById('reset-password-input').value;
+  var confirm = document.getElementById('reset-password-confirm').value;
+  var errEl = document.getElementById('reset-error');
+  var succEl = document.getElementById('reset-success');
+  errEl.style.display = 'none';
+  succEl.style.display = 'none';
+
+  if (!password || !confirm) { errEl.textContent = 'Please fill in both fields.'; errEl.style.display = ''; return; }
+  if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = ''; return; }
+  if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('reset-submit-btn');
+  btn.disabled = true; btn.textContent = 'Resetting...';
+
+  apiCall('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email: email, token: token, password: password, password_confirmation: confirm })
+  }).then(function(res) {
+    btn.disabled = false; btn.textContent = 'Reset Password';
+    if (res && res.success) {
+      succEl.textContent = res.message || 'Password reset successfully! You can now sign in.';
+      succEl.style.display = '';
+      window.history.replaceState({}, '', window.location.pathname);
+      setTimeout(function() { showLoginForm(); }, 2000);
+    } else {
+      errEl.textContent = (res && res.message) || 'Invalid or expired reset token.';
+      errEl.style.display = '';
+    }
+  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Reset Password';
+    errEl.textContent = 'Failed to reset password. The token may have expired.';
+    errEl.style.display = '';
+  });
 }
 
 function doLogin() {
@@ -781,16 +867,106 @@ function doLogout() {
   }
 })();
 
+// Handle reset-password URL (when user clicks email link)
+(function handleResetPasswordUrl() {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token');
+  var email = params.get('email');
+  if (token && email && window.location.pathname === '/reset-password') {
+    setTimeout(function() {
+      openModal('auth');
+      showResetForm();
+    }, 500);
+  }
+})();
+
+/* ===== PROFILE EDIT ===== */
+function openProfileEdit() {
+  var dd = document.getElementById('auth-dropdown');
+  if (dd) dd.classList.remove('open');
+  if (!authUser || !authToken) { openModal('auth'); return; }
+  document.getElementById('profile-name').value = authUser.name || '';
+  document.getElementById('profile-email').value = authUser.email || '';
+  document.getElementById('profile-password').value = '';
+  document.getElementById('profile-password-confirm').value = '';
+  document.getElementById('profile-error').style.display = 'none';
+  document.getElementById('profile-success').style.display = 'none';
+  openModal('profile');
+}
+
+function doUpdateProfile() {
+  var name = document.getElementById('profile-name').value.trim();
+  var email = document.getElementById('profile-email').value.trim();
+  var password = document.getElementById('profile-password').value;
+  var confirm = document.getElementById('profile-password-confirm').value;
+  var errEl = document.getElementById('profile-error');
+  var succEl = document.getElementById('profile-success');
+  errEl.style.display = 'none';
+  succEl.style.display = 'none';
+
+  if (!name || !email) { errEl.textContent = 'Name and email are required.'; errEl.style.display = ''; return; }
+  if (password && password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = ''; return; }
+  if (password && password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('profile-submit-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  var payload = { name: name, email: email };
+  if (password) { payload.password = password; payload.password_confirmation = confirm; }
+
+  fetch(API + '/profile', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Authorization': 'Bearer ' + authToken,
+      'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') || {}).content || ''
+    },
+    body: JSON.stringify(payload)
+  }).then(function(r) { return r.json(); })
+  .then(function(res) {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+    if (res && res.user) {
+      authUser = res.user;
+      localStorage.setItem('auth_user', JSON.stringify(authUser));
+      updateAuthUI();
+      succEl.textContent = 'Profile updated successfully!';
+      succEl.style.display = '';
+      document.getElementById('profile-password').value = '';
+      document.getElementById('profile-password-confirm').value = '';
+      setTimeout(function() { closeModal('profile'); showToast('Profile updated!'); }, 1500);
+    } else {
+      errEl.textContent = (res && res.message) || 'Failed to update profile.';
+      errEl.style.display = '';
+    }
+  }).catch(function() {
+    btn.disabled = false; btn.textContent = 'Save Changes';
+    errEl.textContent = 'Failed to update profile. Please try again.';
+    errEl.style.display = '';
+  });
+}
+
 // Enter key support for auth forms
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     var authModal = document.getElementById('modal-auth');
     if (authModal && authModal.classList.contains('open')) {
-      if (document.getElementById('auth-login-form').style.display !== 'none') {
+      var loginForm = document.getElementById('auth-login-form');
+      var forgotForm = document.getElementById('auth-forgot-form');
+      var resetForm = document.getElementById('auth-reset-form');
+      if (loginForm && loginForm.style.display !== 'none') {
         doLogin();
+      } else if (forgotForm && forgotForm.style.display !== 'none') {
+        doForgotPassword();
+      } else if (resetForm && resetForm.style.display !== 'none') {
+        doResetPassword();
       } else {
         doRegister();
       }
+    }
+    var profileModal = document.getElementById('modal-profile');
+    if (profileModal && profileModal.classList.contains('open')) {
+      doUpdateProfile();
     }
   }
 });
