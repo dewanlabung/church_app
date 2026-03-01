@@ -96,6 +96,7 @@ Route::get('/appearance/themes', [AppearanceController::class, 'themes']);
 
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/sitemap/stats', [SitemapController::class, 'stats']);
 
 // Public Submissions
 Route::post('/contact', [ContactController::class, 'store']);
@@ -274,6 +275,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/localizations', [LocalizationController::class, 'store']);
     Route::put('/localizations/{localization}', [LocalizationController::class, 'update']);
     Route::delete('/localizations/{localization}', [LocalizationController::class, 'destroy']);
+
+    // Sitemap (admin)
+    Route::post('/sitemap/generate', [SitemapController::class, 'generate']);
 
     // System & Deploy
     Route::get('/system/status', [SystemController::class, 'status']);

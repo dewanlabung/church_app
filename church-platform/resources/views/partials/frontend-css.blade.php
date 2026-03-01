@@ -106,6 +106,22 @@ body::before {
 }
 .nav-link:hover { color: var(--text-primary); background: rgba(201,168,76,0.08); }
 .nav-link.active { color: var(--gold); background: var(--gold-glow); }
+/* Nav Dropdown */
+.nav-dropdown-wrap { position: relative; }
+.nav-dropdown-arrow { font-size: 0.6rem; margin-left: 2px; }
+.nav-dropdown {
+  display: none; position: absolute; top: 100%; left: 0; min-width: 180px; z-index: 50;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md); padding: 4px 0; margin-top: 4px;
+}
+.nav-dropdown-wrap:hover .nav-dropdown { display: block; }
+.nav-dropdown-item {
+  display: block; width: 100%; text-align: left; padding: 8px 14px;
+  font-size: 0.82rem; font-weight: 500; color: var(--text-secondary);
+  background: none; border: none; cursor: pointer; font-family: var(--font-body); transition: all 0.2s;
+}
+.nav-dropdown-item:hover { color: var(--gold); background: var(--gold-glow); }
+.mobile-nav-sub { padding-left: 2.5rem; font-size: 0.85rem; opacity: 0.8; }
 .nav-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .nav-mobile-btn {
   display: none; background: none; border: none;
