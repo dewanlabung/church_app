@@ -27,6 +27,7 @@ import AppearanceManager from './admin/AppearanceManager';
 import MobileThemeManager from './admin/MobileThemeManager';
 import LocalizationManager from './admin/LocalizationManager';
 import ProfileManager from './admin/ProfileManager';
+import SitemapManager from './admin/SitemapManager';
 
 const components = {
     'verses': VersesManager,
@@ -58,6 +59,7 @@ const components = {
     'mobile-theme': MobileThemeManager,
     'translations': LocalizationManager,
     'profile': ProfileManager,
+    'sitemap': SitemapManager,
 };
 
 export default function AdminApp({ section }) {

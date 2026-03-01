@@ -30,7 +30,10 @@ class CategoryController extends Controller
         if ($request->has('type')) {
             $query->where('type', $request->type);
         }
-        return response()->json(['data' => $query->with('children')->get()]);
+        if ($request->has('tree') && $request->tree) {
+            $query->whereNull('parent_id');
+        }
+        return response()->json(['data' => $query->with('children.children')->get()]);
     }
 
     public function store(Request $request): JsonResponse

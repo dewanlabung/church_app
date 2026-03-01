@@ -6,6 +6,8 @@ var NAV_ICONS = {home:'\u2302',blog:'\uD83D\uDCF0',events:'\uD83D\uDCC5',prayers
 var BOOK_ICONS = ['\uD83D\uDCD8','\uD83D\uDCD7','\uD83D\uDCD5','\uD83D\uDCD9','\uD83D\uDCD3','\uD83D\uDCD4','\uD83D\uDCD2','\uD83D\uDCDA'];
 var MINISTRY_ICONS = ['\uD83E\uDD1D','\uD83C\uDFB5','\uD83D\uDC76','\uD83C\uDF93','\uD83C\uDF5E','\uD83C\uDFE5','\uD83D\uDCD6','\uD83C\uDF0D','\uD83D\uDC92','\uD83C\uDFA8'];
 var currentPage = 'home';
+var frontendMenus = null;
+var frontendCategories = [];
 var prayedIds = {};
 var selectedRating = 0;
 var selectedGiving = null;
@@ -58,12 +60,125 @@ function buildNav() {
   var nl = document.getElementById('nav-links');
   var ml = document.getElementById('mobile-links');
   nl.innerHTML = ''; ml.innerHTML = '';
+
+  // If we have admin-configured menus, use them
+  if (frontendMenus && frontendMenus.items && frontendMenus.items.length > 0) {
+    buildMenuFromConfig(nl, ml, frontendMenus.items);
+    return;
+  }
+
+  // Default fallback nav
   PAGES.forEach(function(p) {
     var cls = p === currentPage ? 'nav-link active' : 'nav-link';
     nl.innerHTML += '<li><button class="' + cls + '" onclick="navigate(\'' + p + '\')">' + NAV_LABELS[p] + '</button></li>';
     var mcls = p === currentPage ? 'mobile-nav-item active' : 'mobile-nav-item';
     ml.innerHTML += '<button class="' + mcls + '" onclick="navigate(\'' + p + '\')"><span class="mobile-nav-icon">' + NAV_ICONS[p] + '</span>' + NAV_LABELS[p] + '</button>';
   });
+}
+
+function buildMenuFromConfig(nl, ml, menuItems) {
+  menuItems.forEach(function(item) {
+    var hasChildren = (item.children && item.children.length > 0);
+    var target = resolveMenuTarget(item);
+    var isActive = target.page && target.page === currentPage;
+
+    // Desktop nav
+    if (hasChildren) {
+      var li = '<li class="nav-dropdown-wrap">';
+      li += '<button class="nav-link' + (isActive ? ' active' : '') + '" onclick="' + target.action + '">' + esc(item.label);
+      li += ' <span class="nav-dropdown-arrow">&#9662;</span></button>';
+      li += '<div class="nav-dropdown">';
+      item.children.forEach(function(child) {
+        var ct = resolveMenuTarget(child);
+        li += '<button class="nav-dropdown-item" onclick="' + ct.action + '">' + esc(child.label) + '</button>';
+      });
+      // If type is category, also show subcategories from API
+      if (item.type === 'category') {
+        var catChildren = getCategoryChildren(item.target);
+        catChildren.forEach(function(sc) {
+          li += '<button class="nav-dropdown-item" onclick="navigateToCategoryBlog(\'' + esc(sc.slug) + '\')">' + esc(sc.name) + '</button>';
+        });
+      }
+      li += '</div></li>';
+      nl.innerHTML += li;
+    } else {
+      nl.innerHTML += '<li><button class="nav-link' + (isActive ? ' active' : '') + '" onclick="' + target.action + '">' + esc(item.label) + '</button></li>';
+    }
+
+    // Mobile nav
+    var mcls = isActive ? 'mobile-nav-item active' : 'mobile-nav-item';
+    ml.innerHTML += '<button class="' + mcls + '" onclick="' + target.action + '"><span class="mobile-nav-icon">' + (NAV_ICONS[target.page] || '&#9679;') + '</span>' + esc(item.label) + '</button>';
+    if (hasChildren) {
+      item.children.forEach(function(child) {
+        var ct = resolveMenuTarget(child);
+        ml.innerHTML += '<button class="mobile-nav-item mobile-nav-sub" onclick="' + ct.action + '"><span class="mobile-nav-icon">&#8627;</span>' + esc(child.label) + '</button>';
+      });
+    }
+  });
+}
+
+function resolveMenuTarget(item) {
+  var type = item.type || 'link';
+  var target = item.target || '';
+  if (type === 'page') {
+    // Navigate to a SPA page by slug
+    var pageSlug = target.replace(/^\//, '');
+    if (PAGES.indexOf(pageSlug) !== -1) {
+      return { action: "navigate('" + pageSlug + "')", page: pageSlug };
+    }
+    return { action: "navigate('home')", page: 'home' };
+  }
+  if (type === 'post') {
+    return { action: "viewBlogPost('" + esc(target) + "')", page: 'blog' };
+  }
+  if (type === 'category') {
+    return { action: "navigateToCategoryBlog('" + esc(target) + "')", page: 'blog' };
+  }
+  if (type === 'link') {
+    if (target.indexOf('http') === 0) {
+      return { action: "window.open('" + esc(target) + "','_blank')", page: '' };
+    }
+    var pg = target.replace(/^[#\/]+/, '');
+    if (PAGES.indexOf(pg) !== -1) {
+      return { action: "navigate('" + pg + "')", page: pg };
+    }
+    return { action: "navigate('home')", page: 'home' };
+  }
+  return { action: "navigate('home')", page: 'home' };
+}
+
+function getCategoryChildren(slugOrId) {
+  var result = [];
+  frontendCategories.forEach(function(cat) {
+    if ((cat.slug === slugOrId || String(cat.id) === String(slugOrId)) && cat.children) {
+      result = cat.children.filter(function(c) { return c.is_active; });
+    }
+  });
+  return result;
+}
+
+function navigateToCategoryBlog(categorySlug) {
+  navigate('blog');
+  setTimeout(function() {
+    setBlogCategory(categorySlug);
+  }, 200);
+}
+
+function loadFrontendMenus() {
+  return apiCall('/menus/header').then(function(res) {
+    if (res && res.data) {
+      frontendMenus = res.data;
+      buildNav();
+    }
+  }).catch(function() {});
+}
+
+function loadFrontendCategories() {
+  return apiCall('/categories?tree=1').then(function(res) {
+    if (res && res.data) {
+      frontendCategories = res.data;
+    }
+  }).catch(function() {});
 }
 
 function navigate(page, opts) {
@@ -1774,7 +1889,7 @@ Promise.allSettled([
   loadWidgetConfig(),
   loadVerse(), loadBlessing(), loadAnnouncements(), loadPosts(), loadPrayers(), loadEvents(),
   loadBooks(), loadStudies(), loadSermons(), loadReviews(), loadTestimonies(), loadChurchSettings(), loadMinistries(),
-  loadMobileTheme(), loadPwaConfig()
+  loadMobileTheme(), loadPwaConfig(), loadFrontendCategories(), loadFrontendMenus()
 ]).then(function() {
   // Apply widget layout after all content is loaded to avoid race conditions
   applyWidgetLayout();
