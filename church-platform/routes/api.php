@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Api\SermonController;
 use App\Http\Controllers\Api\SettingController;
+use App\Http\Controllers\Api\ChurchController;
 use App\Http\Controllers\Api\SitemapController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\TestimonyController;
@@ -93,6 +94,11 @@ Route::get('/translations/{language}', [LocalizationController::class, 'getTrans
 // Appearance (public - CSS themes)
 Route::get('/appearance', [AppearanceController::class, 'index']);
 Route::get('/appearance/themes', [AppearanceController::class, 'themes']);
+
+// Churches (public)
+Route::get('/churches', [ChurchController::class, 'directory']);
+Route::get('/churches/{slug}', [ChurchController::class, 'showBySlug']);
+Route::post('/churches/{slug}/view', [ChurchController::class, 'incrementView']);
 
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
@@ -275,6 +281,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/localizations', [LocalizationController::class, 'store']);
     Route::put('/localizations/{localization}', [LocalizationController::class, 'update']);
     Route::delete('/localizations/{localization}', [LocalizationController::class, 'destroy']);
+
+    // Churches CRUD (admin)
+    Route::get('/churches/admin', [ChurchController::class, 'index']);
+    Route::get('/churches/admin/available-admins', [ChurchController::class, 'availableAdmins']);
+    Route::get('/churches/admin/my-church', [ChurchController::class, 'myChurch']);
+    Route::post('/churches/admin', [ChurchController::class, 'store']);
+    Route::get('/churches/admin/{church}', [ChurchController::class, 'show']);
+    Route::post('/churches/admin/{church}', [ChurchController::class, 'update']);
+    Route::patch('/churches/admin/{church}/status', [ChurchController::class, 'updateStatus']);
+    Route::patch('/churches/admin/{church}/featured', [ChurchController::class, 'toggleFeatured']);
+    Route::post('/churches/admin/{church}/documents', [ChurchController::class, 'uploadDocument']);
+    Route::delete('/churches/admin/{church}/documents', [ChurchController::class, 'deleteDocument']);
+    Route::delete('/churches/admin/{church}', [ChurchController::class, 'destroy']);
 
     // Sitemap (admin)
     Route::post('/sitemap/generate', [SitemapController::class, 'generate']);
