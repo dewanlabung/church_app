@@ -335,6 +335,24 @@
       </div>
     </div>
   </div>
+  <!-- CHURCHES DIRECTORY -->
+  <div class="page-section" id="page-churches">
+    <div class="section-header">
+      <h2 class="section-title">&#9962; Church Directory</h2>
+    </div>
+    <div class="church-dir-filters" style="margin-bottom:1.5rem;display:flex;gap:0.8rem;flex-wrap:wrap">
+      <input type="text" class="form-input" id="church-search-input" placeholder="Search churches..." style="flex:1;min-width:200px">
+      <button class="btn-primary" onclick="searchChurches()" style="white-space:nowrap">Search</button>
+    </div>
+    <div class="cards-grid" id="churches-list"></div>
+    <div id="churches-load-more" style="text-align:center;margin-top:1.5rem"></div>
+  </div>
+
+  <!-- CHURCH DETAIL -->
+  <div class="page-section" id="page-church-detail">
+    <div id="church-detail-content"></div>
+  </div>
+
   <!-- ABOUT -->
   <div class="page-section" id="page-about">
     <div class="section-header"><h2 class="section-title">&#9962; About Our Church</h2></div>

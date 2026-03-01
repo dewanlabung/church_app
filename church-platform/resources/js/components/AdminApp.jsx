@@ -28,6 +28,8 @@ import MobileThemeManager from './admin/MobileThemeManager';
 import LocalizationManager from './admin/LocalizationManager';
 import ProfileManager from './admin/ProfileManager';
 import SitemapManager from './admin/SitemapManager';
+import ChurchDirectory from './admin/ChurchDirectory';
+import ChurchBuilder from './admin/ChurchBuilder';
 
 const components = {
     'verses': VersesManager,
@@ -60,6 +62,8 @@ const components = {
     'translations': LocalizationManager,
     'profile': ProfileManager,
     'sitemap': SitemapManager,
+    'churches': ChurchDirectory,
+    'church-builder': ChurchBuilder,
 };
 
 export default function AdminApp({ section }) {

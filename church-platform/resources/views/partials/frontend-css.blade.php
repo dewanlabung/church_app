@@ -810,4 +810,54 @@ body::before {
   .blog-detail-title { font-size: 1.4rem; }
   .blog-detail-content { padding: 1.2rem; }
 }
+
+/* ===== CHURCH DIRECTORY & DETAIL ===== */
+.church-card { overflow: hidden; padding: 0; transition: transform 0.2s, box-shadow 0.2s; }
+.church-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.church-card-cover { height: 140px; background-size: cover; background-position: center; }
+.church-card-cover-default { display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); }
+.church-card-body { padding: 1rem; position: relative; }
+.church-card-logo { width: 48px; height: 48px; border-radius: 10px; object-fit: contain; position: absolute; top: -24px; right: 1rem; background: var(--bg-card); border: 2px solid var(--border); padding: 4px; }
+.church-card-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.3rem; }
+.church-card-denom { font-size: 0.8rem; color: var(--gold); margin-bottom: 0.3rem; }
+.church-card-loc { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.church-card-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+
+/* Church detail page */
+.church-page-cover { width: 100%; height: 280px; background-size: cover; background-position: center; border-radius: 16px; position: relative; overflow: hidden; margin-bottom: -60px; }
+.church-page-cover-default { display: flex; align-items: center; justify-content: center; font-size: 4rem; color: rgba(255,255,255,0.2); }
+.church-page-cover-overlay { position: absolute; inset: 0; }
+.church-page-header { display: flex; align-items: center; gap: 1.2rem; padding: 0 1rem; position: relative; z-index: 2; margin-bottom: 2rem; }
+.church-page-logo { width: 80px; height: 80px; border-radius: 16px; object-fit: contain; background: var(--bg-card); border: 3px solid var(--border-strong); padding: 6px; }
+.church-page-name { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.2rem; }
+.church-page-denom { font-size: 0.9rem; color: var(--gold); }
+.church-page-loc { font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.2rem; }
+.church-page-grid { display: grid; grid-template-columns: 1fr 340px; gap: 2rem; }
+.church-page-main { min-width: 0; }
+.church-page-sidebar { display: flex; flex-direction: column; gap: 1.2rem; }
+.church-page-section { background: var(--bg-card); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.2rem; border: 1px solid var(--border); }
+.church-page-section h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.8rem; }
+.church-page-section p { color: var(--text-secondary); line-height: 1.7; }
+.church-page-history { color: var(--text-secondary); line-height: 1.8; }
+.church-page-history p { margin-bottom: 0.8rem; }
+.church-page-docs { display: flex; flex-direction: column; gap: 0.5rem; }
+.church-page-doc { display: flex; align-items: center; gap: 0.5rem; color: var(--gold); text-decoration: none; padding: 0.6rem 0.8rem; background: var(--bg-secondary); border-radius: 8px; transition: background 0.2s; }
+.church-page-doc:hover { background: var(--bg-elevated); }
+.church-sidebar-card { background: var(--bg-card); border-radius: 12px; padding: 1.2rem; border: 1px solid var(--border); }
+.church-sidebar-card h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.8rem; }
+.church-service-row { display: flex; justify-content: space-between; padding: 0.4rem 0; color: var(--text-primary); font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+.church-service-label { font-size: 0.8rem; color: var(--text-muted); padding-bottom: 0.3rem; }
+.church-contact-row { font-size: 0.9rem; color: var(--text-secondary); padding: 0.3rem 0; }
+.church-contact-row a { color: var(--gold); text-decoration: none; }
+.church-contact-row a:hover { text-decoration: underline; }
+.church-social-links { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.church-social-link { display: inline-block; padding: 0.4rem 0.9rem; border-radius: 8px; color: #fff; font-size: 0.8rem; font-weight: 600; text-decoration: none; opacity: 0.9; transition: opacity 0.2s; }
+.church-social-link:hover { opacity: 1; }
+
+@media(max-width:900px) {
+  .church-page-cover { height: 180px; border-radius: 12px; }
+  .church-page-grid { grid-template-columns: 1fr; }
+  .church-page-name { font-size: 1.3rem; }
+  .church-page-logo { width: 56px; height: 56px; }
+}
 </style>

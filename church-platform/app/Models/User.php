@@ -12,7 +12,7 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        'name', 'email', 'password', 'is_admin', 'role_id',
+        'name', 'email', 'password', 'is_admin', 'role_id', 'church_id',
         'avatar', 'bio', 'phone', 'provider', 'provider_id',
     ];
 
@@ -30,6 +30,8 @@ class User extends Authenticatable
     public function reviews() { return $this->hasMany(Review::class); }
     public function bibleStudies() { return $this->hasMany(BibleStudy::class, 'author_id'); }
     public function sermons() { return $this->hasMany(Sermon::class, 'author_id'); }
+    public function church() { return $this->belongsTo(Church::class); }
+    public function managedChurch() { return $this->hasOne(Church::class, 'admin_user_id'); }
 
     public function hasPermission($permission)
     {

@@ -67,6 +67,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             'announcements', 'pages', 'categories', 'menus', 'roles',
             'appearance', 'mobile-theme', 'translations',
             'homepage', 'system', 'profile', 'sitemap',
+            'churches', 'church-builder',
         ];
         if (!in_array($section, $validSections)) {
             abort(404);

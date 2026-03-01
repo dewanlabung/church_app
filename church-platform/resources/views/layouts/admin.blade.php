@@ -153,6 +153,20 @@
                     Ministries
                 </a>
 
+                <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">Churches</p>
+
+                <a href="{{ route('admin.manage', 'churches') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/churches') ? 'active' : '' }}">
+                    <i class="fas fa-church w-5 mr-3 text-center text-indigo-300"></i>
+                    Church Directory
+                </a>
+
+                <a href="{{ route('admin.manage', 'church-builder') }}"
+                   class="sidebar-link flex items-center px-3 py-2.5 text-sm font-medium text-indigo-100 rounded-lg transition-colors {{ request()->is('admin/manage/church-builder') ? 'active' : '' }}">
+                    <i class="fas fa-tools w-5 mr-3 text-center text-indigo-300"></i>
+                    Website Builder
+                </a>
+
                 <p class="px-3 pt-4 text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-2">CMS</p>
 
                 <a href="{{ route('admin.manage', 'posts') }}"

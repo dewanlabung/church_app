@@ -190,13 +190,20 @@ function navigate(page, opts) {
   // Handle special sub-pages
   var blogDetail = document.getElementById('page-blog-detail');
   if (blogDetail) blogDetail.classList.toggle('active', page === 'blog-detail');
+  var churchesPage = document.getElementById('page-churches');
+  if (churchesPage) churchesPage.classList.toggle('active', page === 'churches');
+  var churchDetail = document.getElementById('page-church-detail');
+  if (churchDetail) churchDetail.classList.toggle('active', page === 'church-detail');
   if (page === 'blog') loadBlogPage();
+  if (page === 'churches') loadChurchDirectory();
   buildNav();
   closeMobile();
   // Update URL hash for permalink support
   if (!opts.skipHash) {
     if (page === 'blog-detail' && opts.slug) {
       window.location.hash = '#/blog/' + opts.slug;
+    } else if (page === 'church-detail' && opts.slug) {
+      window.location.hash = '#/church/' + opts.slug;
     } else if (page === 'home') {
       history.replaceState(null, '', window.location.pathname);
     } else {
@@ -218,6 +225,19 @@ function handleHashRoute() {
       viewBlogPost(slug);
       return;
     }
+  }
+  // Church detail permalink: #/church/church-slug
+  if (path.indexOf('church/') === 0) {
+    var churchSlug = path.substring(7);
+    if (churchSlug && churchSlug !== '') {
+      viewChurchPage(churchSlug);
+      return;
+    }
+  }
+  // Churches directory: #/churches
+  if (path === 'churches') {
+    navigate('churches', { skipHash: true });
+    return;
   }
   // Page navigation: #/events, #/blog, etc.
   if (PAGES.indexOf(path) !== -1) {
@@ -1871,6 +1891,176 @@ function loadPwaConfig() {
       if (appleName && d.pwa_name) appleName.content = d.pwa_name;
     }
   }).catch(function() {});
+}
+
+/* ===== CHURCH DIRECTORY & DETAIL ===== */
+var churchDirPage = 1;
+var churchDirLoading = false;
+
+function loadChurchDirectory(page) {
+  page = page || 1;
+  churchDirPage = page;
+  var container = document.getElementById('churches-list');
+  var loadMore = document.getElementById('churches-load-more');
+  if (page === 1) container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary)">Loading churches...</div>';
+  var searchVal = (document.getElementById('church-search-input') || {}).value || '';
+  var url = '/churches?page=' + page + '&per_page=12';
+  if (searchVal) url += '&search=' + encodeURIComponent(searchVal);
+  churchDirLoading = true;
+  apiCall(url).then(function(res) {
+    churchDirLoading = false;
+    if (!res || !res.data) { container.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--text-secondary)">No churches found.</div>'; return; }
+    if (page === 1) container.innerHTML = '';
+    res.data.forEach(function(c) {
+      container.innerHTML += churchDirectoryCard(c);
+    });
+    if (res.current_page < res.last_page) {
+      loadMore.innerHTML = '<button class="btn-primary" onclick="loadChurchDirectory(' + (page + 1) + ')">Load More</button>';
+    } else {
+      loadMore.innerHTML = '';
+    }
+  });
+}
+
+function searchChurches() { loadChurchDirectory(1); }
+
+function churchDirectoryCard(c) {
+  var color = c.primary_color || '#4F46E5';
+  var img = c.cover_photo_url
+    ? '<div class="church-card-cover" style="background-image:url(\'' + esc(c.cover_photo_url) + '\')"></div>'
+    : '<div class="church-card-cover church-card-cover-default" style="background:linear-gradient(135deg,' + esc(color) + ',#1e1b4b)"><span style="font-size:2.5rem">&#9962;</span></div>';
+  var logo = c.logo_url
+    ? '<img src="' + esc(c.logo_url) + '" alt="" class="church-card-logo">'
+    : '';
+  return '<div class="card church-card" onclick="viewChurchPage(\'' + esc(c.slug) + '\')" style="cursor:pointer">' +
+    img + '<div class="church-card-body">' + logo +
+    '<h3 class="church-card-name">' + esc(c.name) + '</h3>' +
+    (c.denomination ? '<div class="church-card-denom">' + esc(c.denomination) + '</div>' : '') +
+    (c.city ? '<div class="church-card-loc"><span>&#128205;</span> ' + esc(c.city) + (c.state ? ', ' + esc(c.state) : '') + '</div>' : '') +
+    (c.short_description ? '<p class="church-card-desc">' + esc(c.short_description).substring(0, 120) + (c.short_description.length > 120 ? '...' : '') + '</p>' : '') +
+    '</div></div>';
+}
+
+function viewChurchPage(slug) {
+  // Hide all pages
+  PAGES.forEach(function(p) {
+    document.getElementById('page-' + p).classList.remove('active');
+  });
+  var blogDetail = document.getElementById('page-blog-detail');
+  if (blogDetail) blogDetail.classList.remove('active');
+  var churchesPage = document.getElementById('page-churches');
+  if (churchesPage) churchesPage.classList.remove('active');
+
+  var container = document.getElementById('church-detail-content');
+  container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary)">Loading church...</div>';
+  document.getElementById('page-church-detail').classList.add('active');
+  window.location.hash = '#/church/' + slug;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Track view
+  apiCall('/churches/' + slug + '/view', { method: 'POST' });
+
+  apiCall('/churches/' + slug).then(function(res) {
+    if (!res || !res.data) {
+      container.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--text-secondary)">Church not found.</div>';
+      return;
+    }
+    var c = res.data;
+    var color = c.primary_color || '#4F46E5';
+    var html = '';
+
+    // Cover
+    if (c.cover_photo_url) {
+      html += '<div class="church-page-cover" style="background-image:url(\'' + esc(c.cover_photo_url) + '\')"><div class="church-page-cover-overlay" style="background:linear-gradient(transparent,rgba(0,0,0,0.7))"></div></div>';
+    } else {
+      html += '<div class="church-page-cover church-page-cover-default" style="background:linear-gradient(135deg,' + esc(color) + ',#1e1b4b)"></div>';
+    }
+
+    // Header
+    html += '<div class="church-page-header">';
+    if (c.logo_url) {
+      html += '<img src="' + esc(c.logo_url) + '" alt="" class="church-page-logo">';
+    }
+    html += '<div>';
+    html += '<h1 class="church-page-name" style="color:' + esc(color) + '">' + esc(c.name) + '</h1>';
+    if (c.denomination) html += '<div class="church-page-denom">' + esc(c.denomination) + (c.year_founded ? ' &bull; Est. ' + c.year_founded : '') + '</div>';
+    if (c.city) html += '<div class="church-page-loc">&#128205; ' + esc(c.address ? c.address + ', ' : '') + esc(c.city) + (c.state ? ', ' + esc(c.state) : '') + (c.zip_code ? ' ' + esc(c.zip_code) : '') + '</div>';
+    html += '</div></div>';
+
+    // Content grid
+    html += '<div class="church-page-grid">';
+
+    // Left column
+    html += '<div class="church-page-main">';
+
+    // Short description
+    if (c.short_description) {
+      html += '<div class="church-page-section"><p style="font-size:1.1rem;color:var(--text-secondary);line-height:1.7">' + esc(c.short_description) + '</p></div>';
+    }
+
+    // Mission / Vision
+    if (c.mission_statement) {
+      html += '<div class="church-page-section"><h3 style="color:' + esc(color) + '">Our Mission</h3><p>' + esc(c.mission_statement) + '</p></div>';
+    }
+    if (c.vision_statement) {
+      html += '<div class="church-page-section"><h3 style="color:' + esc(color) + '">Our Vision</h3><p>' + esc(c.vision_statement) + '</p></div>';
+    }
+
+    // History
+    if (c.history) {
+      html += '<div class="church-page-section"><h3 style="color:' + esc(color) + '">Our Story</h3><div class="church-page-history">' + c.history + '</div></div>';
+    }
+
+    // Documents
+    if (c.documents && c.documents.length > 0) {
+      html += '<div class="church-page-section"><h3 style="color:' + esc(color) + '">Documents</h3><div class="church-page-docs">';
+      c.documents.forEach(function(doc) {
+        html += '<a href="/storage/' + esc(doc.file_path) + '" target="_blank" class="church-page-doc"><span>&#128196;</span> ' + esc(doc.name) + '</a>';
+      });
+      html += '</div></div>';
+    }
+
+    html += '</div>'; // end main
+
+    // Right sidebar
+    html += '<div class="church-page-sidebar">';
+
+    // Service hours
+    if (c.service_hours && c.service_hours.length > 0) {
+      html += '<div class="church-sidebar-card"><h4 style="color:' + esc(color) + '">&#128337; Service Times</h4>';
+      c.service_hours.forEach(function(sh) {
+        html += '<div class="church-service-row"><strong>' + esc(sh.day) + '</strong><span>' + esc(sh.time) + '</span></div>';
+        if (sh.label) html += '<div class="church-service-label">' + esc(sh.label) + '</div>';
+      });
+      html += '</div>';
+    }
+
+    // Contact
+    html += '<div class="church-sidebar-card"><h4 style="color:' + esc(color) + '">&#128222; Contact</h4>';
+    if (c.phone) html += '<div class="church-contact-row"><span>&#128222;</span> ' + esc(c.phone) + '</div>';
+    if (c.email) html += '<div class="church-contact-row"><span>&#9993;</span> <a href="mailto:' + esc(c.email) + '">' + esc(c.email) + '</a></div>';
+    if (c.website) html += '<div class="church-contact-row"><span>&#127760;</span> <a href="' + esc(c.website) + '" target="_blank">' + esc(c.website.replace(/^https?:\/\//, '')) + '</a></div>';
+    html += '</div>';
+
+    // Social
+    var socials = [];
+    if (c.facebook_url) socials.push('<a href="' + esc(c.facebook_url) + '" target="_blank" class="church-social-link" style="background:' + esc(color) + '">Facebook</a>');
+    if (c.instagram_url) socials.push('<a href="' + esc(c.instagram_url) + '" target="_blank" class="church-social-link" style="background:' + esc(color) + '">Instagram</a>');
+    if (c.youtube_url) socials.push('<a href="' + esc(c.youtube_url) + '" target="_blank" class="church-social-link" style="background:' + esc(color) + '">YouTube</a>');
+    if (c.twitter_url) socials.push('<a href="' + esc(c.twitter_url) + '" target="_blank" class="church-social-link" style="background:' + esc(color) + '">Twitter</a>');
+    if (c.tiktok_url) socials.push('<a href="' + esc(c.tiktok_url) + '" target="_blank" class="church-social-link" style="background:' + esc(color) + '">TikTok</a>');
+    if (socials.length > 0) {
+      html += '<div class="church-sidebar-card"><h4 style="color:' + esc(color) + '">Follow Us</h4><div class="church-social-links">' + socials.join('') + '</div></div>';
+    }
+
+    html += '</div>'; // end sidebar
+    html += '</div>'; // end grid
+
+    // Back button
+    html += '<div style="margin-top:2rem"><button class="blog-back-btn" onclick="navigate(\'churches\')">&#8592; Back to Directory</button></div>';
+
+    container.innerHTML = html;
+  });
 }
 
 // Re-apply bottom nav highlight when navigating
