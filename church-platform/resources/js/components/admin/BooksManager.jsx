@@ -142,6 +142,9 @@ export default function BooksManager() {
             <div className="bg-white rounded-xl shadow-sm border">
                 <DataTable columns={columns} data={items} actions={(row) => (
                     <div className="flex gap-2">
+                        {row.slug && (
+                            <a href={`/library/${row.slug}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                        )}
                         <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                         <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                     </div>
@@ -152,7 +155,7 @@ export default function BooksManager() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
                     <FormField label="Author" name="author" value={form.author} onChange={handleChange} required />
-                    <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} rows={4} />
+                    <FormField label="Description" name="description" type="richtext" value={form.description} onChange={handleChange} placeholder="Describe the book..." />
                     <FormField label="Category" name="category" value={form.category} onChange={handleChange} />
                     <FormField label="ISBN" name="isbn" value={form.isbn} onChange={handleChange} />
                     <FormField label="Publisher" name="publisher" value={form.publisher} onChange={handleChange} />

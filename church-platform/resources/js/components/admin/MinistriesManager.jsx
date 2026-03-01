@@ -156,6 +156,9 @@ export default function MinistriesManager() {
             <div className="bg-white rounded-xl shadow-sm border">
                 <DataTable columns={columns} data={items} actions={(row) => (
                     <div className="flex gap-2">
+                        {row.slug && row.is_active && (
+                            <a href={`/ministries/${row.slug}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                        )}
                         <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                         <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                     </div>
@@ -165,7 +168,7 @@ export default function MinistriesManager() {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit Ministry' : 'Add Ministry'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Name" name="name" value={form.name} onChange={handleChange} required placeholder="Ministry name" />
-                    <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} rows={4} />
+                    <FormField label="Description" name="description" type="richtext" value={form.description} onChange={handleChange} placeholder="Describe the ministry..." />
                     <FormField label="Category" name="category" value={form.category} onChange={handleChange} placeholder="e.g. Worship, Youth, Outreach" />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField label="Leader Name" name="leader_name" value={form.leader_name} onChange={handleChange} />

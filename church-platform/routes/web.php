@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Installer\InstallerController;
+use App\Http\Controllers\PublicContentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -114,7 +115,18 @@ Route::get('/manifest.json', function () {
         ->header('Cache-Control', 'public, max-age=3600');
 });
 
-// Frontend catch-all (SPA)
+// Public Content Pages (SSR with clean URLs)
+Route::get('/blog/{slug}', [PublicContentController::class, 'post'])->name('public.post');
+Route::get('/page/{slug}', [PublicContentController::class, 'page'])->name('public.page');
+Route::get('/ministries', [PublicContentController::class, 'ministries'])->name('public.ministries');
+Route::get('/ministries/{slug}', [PublicContentController::class, 'ministry'])->name('public.ministry');
+Route::get('/bible-studies', [PublicContentController::class, 'bibleStudies'])->name('public.bible-studies');
+Route::get('/bible-studies/{slug}', [PublicContentController::class, 'bibleStudy'])->name('public.bible-study');
+Route::get('/library', [PublicContentController::class, 'library'])->name('public.library');
+Route::get('/library/{slug}', [PublicContentController::class, 'book'])->name('public.book');
+Route::get('/about', [PublicContentController::class, 'about'])->name('public.about');
+
+// Frontend catch-all (SPA for remaining pages)
 Route::get('/{any?}', function () {
     return view('welcome');
 })->where('any', '.*')->name('home');

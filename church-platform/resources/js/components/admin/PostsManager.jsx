@@ -198,7 +198,7 @@ export default function PostsManager() {
                             <a href={getPermalink(editing)} target="_blank" rel="noopener noreferrer" className="text-xs text-green-600 hover:text-green-800 font-medium whitespace-nowrap">View</a>
                         </div>
                     )}
-                    <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} required placeholder="Post content..." />
+                    <FormField label="Content" name="content" type="richtext" value={form.content} onChange={handleChange} required placeholder="Write your post content..." />
                     <FormField label="Excerpt" name="excerpt" type="textarea" rows={2} value={form.excerpt} onChange={handleChange} placeholder="Brief summary..." />
                     <FormField label="Category" name="category" value={form.category} onChange={handleChange} placeholder="e.g. News, Devotional" />
                     <FormField label="Status" name="status" type="select" value={form.status} onChange={handleChange} options={statusOptions} />

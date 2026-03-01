@@ -182,6 +182,9 @@ export default function BibleStudiesManager() {
             <div className="bg-white rounded-xl shadow-sm border">
                 <DataTable columns={columns} data={items} actions={(row) => (
                     <div className="flex gap-2">
+                        {row.slug && row.is_published && (
+                            <a href={`/bible-studies/${row.slug}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                        )}
                         <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                         <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                     </div>
@@ -192,7 +195,7 @@ export default function BibleStudiesManager() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
                     <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} rows={3} />
-                    <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} rows={6} />
+                    <FormField label="Content" name="content" type="richtext" value={form.content} onChange={handleChange} placeholder="Write Bible study content..." />
                     <FormField label="Scripture Reference" name="scripture_reference" value={form.scripture_reference} onChange={handleChange} placeholder="e.g. Romans 8:28" />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label="Category" name="category" type="select" value={form.category} onChange={handleChange} options={categoryOptions} />

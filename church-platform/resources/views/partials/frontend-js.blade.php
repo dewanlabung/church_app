@@ -183,6 +183,14 @@ function loadFrontendCategories() {
 
 function navigate(page, opts) {
   opts = opts || {};
+
+  // SSR pages - redirect to server-rendered clean URLs
+  var ssrPages = ['ministries', 'bible-studies', 'library', 'about'];
+  if (ssrPages.indexOf(page) !== -1 && !opts.skipUrl) {
+    window.location.href = '/' + page;
+    return;
+  }
+
   currentPage = page;
   PAGES.forEach(function(p) {
     document.getElementById('page-' + p).classList.toggle('active', p === page);
@@ -248,12 +256,11 @@ function handleRoute() {
     navigate('churches', { skipUrl: true });
     return;
   }
-  // Page permalink: /page/page-slug
-  if (path.indexOf('page/') === 0) {
-    var pageSlug = path.substring(5);
-    if (pageSlug && pageSlug !== '') {
-      if (typeof viewStaticPage === 'function') viewStaticPage(pageSlug);
-      return;
+  // SSR pages - these are now server-rendered, no SPA handling needed
+  var ssrPrefixes = ['page/', 'ministries', 'bible-studies', 'library', 'about'];
+  for (var i = 0; i < ssrPrefixes.length; i++) {
+    if (path.indexOf(ssrPrefixes[i]) === 0) {
+      return; // Let the server handle these routes
     }
   }
   // Page navigation: /events, /blog, etc.
@@ -1585,43 +1592,8 @@ function loadBlogSidebar() {
 }
 
 function viewBlogPost(slug) {
-  apiCall('/posts/' + slug).then(function(res) {
-    if (res && res.success && res.data) {
-      var p = res.data;
-      var article = document.getElementById('blog-article');
-      var img = p.featured_image ? '<div class="blog-detail-hero"><img src="/storage/' + esc(p.featured_image) + '" alt="' + esc(p.title) + '"></div>' : '';
-      var tags = '';
-      if (p.tags) {
-        tags = '<div class="blog-detail-tags">' + p.tags.split(',').map(function(t) {
-          return '<span class="blog-tag">' + esc(t.trim()) + '</span>';
-        }).join('') + '</div>';
-      }
-      var permalink = window.location.origin + '/blog/' + p.slug;
-      article.innerHTML = img +
-        '<div class="blog-detail-content">' +
-        (p.category ? '<span class="card-badge badge-worship">' + esc(p.category) + '</span>' : '') +
-        '<h1 class="blog-detail-title">' + esc(p.title) + '</h1>' +
-        '<div class="blog-detail-meta">' +
-        '<span>' + fmtDate(p.published_at || p.created_at) + '</span>' +
-        (p.view_count ? '<span>&bull; ' + p.view_count + ' views</span>' : '') +
-        '<button class="blog-share-btn" onclick="copyPermalink(\'' + esc(permalink) + '\')" title="Copy link">&#128279; Share</button>' +
-        '</div>' +
-        '<div class="blog-detail-body">' + (p.content || '') + '</div>' +
-        tags +
-        '</div>';
-      // Navigate to blog-detail with permalink
-      currentPage = 'blog-detail';
-      PAGES.forEach(function(pg) {
-        document.getElementById('page-' + pg).classList.remove('active');
-      });
-      document.getElementById('page-blog-detail').classList.add('active');
-      history.pushState({ page: 'blog-detail', slug: p.slug }, '', '/blog/' + p.slug);
-      buildNav();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      // Increment view count
-      apiCall('/posts/' + p.slug + '/view', { method: 'POST' }).catch(function() {});
-    }
-  });
+  // Navigate to SSR clean URL for blog posts
+  window.location.href = '/blog/' + slug;
 }
 
 function copyPermalink(url) {

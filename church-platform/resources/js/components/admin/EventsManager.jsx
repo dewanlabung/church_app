@@ -116,7 +116,7 @@ export default function EventsManager() {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit Event' : 'Add Event'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required placeholder="Event title" />
-                    <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} placeholder="Event description..." />
+                    <FormField label="Description" name="description" type="richtext" value={form.description} onChange={handleChange} placeholder="Event description..." />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label="Start Date" name="start_date" type="date" value={form.start_date} onChange={handleChange} required />
                         <FormField label="End Date" name="end_date" type="date" value={form.end_date} onChange={handleChange} />

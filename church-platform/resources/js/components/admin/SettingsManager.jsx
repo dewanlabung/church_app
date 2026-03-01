@@ -964,6 +964,52 @@ export default function SettingsManager() {
                         </div>
                     </div>
 
+                    {/* Clear Cache Section */}
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                            title="Clear Cache"
+                            description="Clear all application caches to refresh content and settings"
+                        />
+                        <div className="space-y-3">
+                            <p className="text-sm text-gray-600">
+                                This will clear all cached data including page cache, configuration cache, route cache, and compiled views. Use this if you see stale content or after making configuration changes.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            setAlert(null);
+                                            const res = await post('/api/system/clear-cache', {});
+                                            setAlert({ type: 'success', message: res.message || 'All caches cleared successfully!' });
+                                        } catch (e) {
+                                            setAlert({ type: 'error', message: e.message || 'Failed to clear cache.' });
+                                        }
+                                    }}
+                                    className="px-5 py-2.5 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center gap-2"
+                                >
+                                    <i className="fas fa-trash-alt text-xs"></i>
+                                    Clear All Caches
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            setAlert(null);
+                                            const res = await post('/api/system/optimize', {});
+                                            setAlert({ type: 'success', message: res.message || 'Application optimized successfully!' });
+                                        } catch (e) {
+                                            setAlert({ type: 'error', message: e.message || 'Failed to optimize.' });
+                                        }
+                                    }}
+                                    className="px-5 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center gap-2"
+                                >
+                                    <i className="fas fa-rocket text-xs"></i>
+                                    Optimize &amp; Rebuild Cache
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="flex justify-end pb-4">
                         <button onClick={handleSaveCache} disabled={cacheSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
                             {cacheSaving ? 'Saving...' : 'Save Cache Settings'}

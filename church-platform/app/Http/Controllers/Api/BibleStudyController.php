@@ -7,6 +7,7 @@ use App\Models\BibleStudy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class BibleStudyController extends Controller
@@ -94,6 +95,15 @@ class BibleStudyController extends Controller
             'is_published'        => 'nullable|boolean',
             'tags'                => 'nullable|string|max:1000',
         ]);
+
+        // Auto-generate slug
+        $slug = Str::slug($validated['title']);
+        $original = $slug;
+        $counter = 1;
+        while (BibleStudy::where('slug', $slug)->exists()) {
+            $slug = $original . '-' . $counter++;
+        }
+        $validated['slug'] = $slug;
 
         if ($request->hasFile('cover_image')) {
             $validated['cover_image'] = $request->file('cover_image')
