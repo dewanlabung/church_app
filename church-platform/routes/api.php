@@ -97,8 +97,8 @@ Route::get('/appearance/themes', [AppearanceController::class, 'themes']);
 
 // Churches (public)
 Route::get('/churches', [ChurchController::class, 'directory']);
-Route::get('/churches/{slug}', [ChurchController::class, 'showBySlug']);
-Route::post('/churches/{slug}/view', [ChurchController::class, 'incrementView']);
+Route::get('/churches/{slug}', [ChurchController::class, 'showBySlug'])->where('slug', '^(?!admin$)[a-zA-Z0-9\-]+$');
+Route::post('/churches/{slug}/view', [ChurchController::class, 'incrementView'])->where('slug', '^(?!admin$)[a-zA-Z0-9\-]+$');
 
 // Sitemap
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
