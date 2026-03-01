@@ -122,7 +122,7 @@ export default function PostsManager() {
     };
 
     const getPermalink = (post) => {
-        return window.location.origin + '/#/blog/' + (post.slug || '');
+        return window.location.origin + '/blog/' + (post.slug || '');
     };
 
     const copyLink = (post) => {
