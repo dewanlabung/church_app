@@ -146,6 +146,9 @@ export default function SermonsManager() {
             <div className="bg-white rounded-xl shadow-sm border">
                 <DataTable columns={columns} data={items} actions={(row) => (
                     <div className="flex gap-2">
+                        {row.slug && (
+                            <a href={`/sermons/${row.slug}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                        )}
                         <button onClick={() => openEdit(row)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                         <button onClick={() => handleDelete(row)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                     </div>
@@ -155,7 +158,7 @@ export default function SermonsManager() {
             <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editing ? 'Edit Sermon' : 'Add Sermon'}>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required placeholder="Sermon title" />
-                    <FormField label="Description" name="description" type="textarea" value={form.description} onChange={handleChange} placeholder="Sermon description..." />
+                    <FormField label="Description" name="description" type="richtext" value={form.description} onChange={handleChange} placeholder="Sermon description..." />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label="Speaker" name="speaker" value={form.speaker} onChange={handleChange} required placeholder="Speaker name" />
                         <FormField label="Scripture Reference" name="scripture_reference" value={form.scripture_reference} onChange={handleChange} placeholder="e.g. John 3:16-17" />

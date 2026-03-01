@@ -230,7 +230,7 @@ export default function ChurchDirectory() {
                                         <i className="fas fa-pen"></i>
                                     </button>
                                     {row.status === 'approved' && (
-                                        <a href={`/#/church/${row.slug}`} target="_blank"
+                                        <a href={`/church/${row.slug}`} target="_blank"
                                             className="text-gray-500 hover:text-gray-700 text-sm" title="View Public Page">
                                             <i className="fas fa-external-link-alt"></i>
                                         </a>

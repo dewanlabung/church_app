@@ -207,7 +207,7 @@ export default function ChurchBuilder() {
                     <p className="text-sm text-gray-500 mt-1">
                         Editing: <strong>{church.name}</strong>
                         {church.status === 'approved' && (
-                            <a href={`/#/church/${church.slug}`} target="_blank" className="ml-2 text-indigo-600 hover:underline">
+                            <a href={`/church/${church.slug}`} target="_blank" className="ml-2 text-indigo-600 hover:underline">
                                 <i className="fas fa-external-link-alt mr-1"></i>View Public Page
                             </a>
                         )}

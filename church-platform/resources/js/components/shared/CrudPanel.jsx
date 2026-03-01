@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export function Modal({ isOpen, onClose, title, children }) {
     if (!isOpen) return null;
@@ -76,8 +76,108 @@ export function Pagination({ meta, onPageChange }) {
     );
 }
 
+export function RichTextEditor({ name, value, onChange, placeholder }) {
+    const editorRef = useRef(null);
+    const toolbarRef = useRef(null);
+    const isInternalChange = useRef(false);
+
+    const execCmd = useCallback((cmd, val = null) => {
+        editorRef.current?.focus();
+        document.execCommand(cmd, false, val);
+        syncContent();
+    }, []);
+
+    const syncContent = useCallback(() => {
+        if (editorRef.current && !isInternalChange.current) {
+            const html = editorRef.current.innerHTML;
+            if (html !== value) {
+                onChange({ target: { name, value: html } });
+            }
+        }
+    }, [name, onChange, value]);
+
+    useEffect(() => {
+        if (editorRef.current && editorRef.current.innerHTML !== value) {
+            isInternalChange.current = true;
+            editorRef.current.innerHTML = value || '';
+            isInternalChange.current = false;
+        }
+    }, [value]);
+
+    const insertLink = () => {
+        const url = prompt('Enter URL:');
+        if (url) execCmd('createLink', url);
+    };
+
+    const insertImage = () => {
+        const url = prompt('Enter image URL:');
+        if (url) execCmd('insertImage', url);
+    };
+
+    const toolbarButtons = [
+        { cmd: 'bold', icon: 'B', title: 'Bold', style: { fontWeight: 'bold' } },
+        { cmd: 'italic', icon: 'I', title: 'Italic', style: { fontStyle: 'italic' } },
+        { cmd: 'underline', icon: 'U', title: 'Underline', style: { textDecoration: 'underline' } },
+        { cmd: 'strikeThrough', icon: 'S', title: 'Strikethrough', style: { textDecoration: 'line-through' } },
+        { type: 'sep' },
+        { cmd: 'formatBlock', val: 'H2', icon: 'H2', title: 'Heading 2' },
+        { cmd: 'formatBlock', val: 'H3', icon: 'H3', title: 'Heading 3' },
+        { cmd: 'formatBlock', val: 'P', icon: '&para;', title: 'Paragraph' },
+        { cmd: 'formatBlock', val: 'BLOCKQUOTE', icon: '&#10077;', title: 'Quote' },
+        { type: 'sep' },
+        { cmd: 'insertUnorderedList', icon: '&#8226;', title: 'Bullet List' },
+        { cmd: 'insertOrderedList', icon: '1.', title: 'Numbered List' },
+        { type: 'sep' },
+        { cmd: 'justifyLeft', icon: '&#9776;', title: 'Align Left' },
+        { cmd: 'justifyCenter', icon: '&#9776;', title: 'Align Center' },
+        { cmd: 'justifyRight', icon: '&#9776;', title: 'Align Right' },
+        { type: 'sep' },
+        { action: insertLink, icon: '&#128279;', title: 'Insert Link' },
+        { action: insertImage, icon: '&#128247;', title: 'Insert Image' },
+        { cmd: 'removeFormat', icon: '&#10006;', title: 'Clear Formatting' },
+    ];
+
+    return (
+        <div className="mb-4">
+            <div ref={toolbarRef} className="flex flex-wrap gap-0.5 p-1.5 bg-gray-50 border border-gray-300 border-b-0 rounded-t-lg">
+                {toolbarButtons.map((btn, i) => {
+                    if (btn.type === 'sep') return <div key={i} className="w-px h-6 bg-gray-300 mx-1 self-center" />;
+                    return (
+                        <button
+                            key={i}
+                            type="button"
+                            title={btn.title}
+                            onClick={(e) => { e.preventDefault(); btn.action ? btn.action() : execCmd(btn.cmd, btn.val); }}
+                            className="w-8 h-8 flex items-center justify-center rounded text-sm text-gray-600 hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                            style={btn.style}
+                            dangerouslySetInnerHTML={{ __html: btn.icon }}
+                        />
+                    );
+                })}
+            </div>
+            <div
+                ref={editorRef}
+                contentEditable
+                className="w-full min-h-[200px] max-h-[500px] overflow-y-auto rounded-b-lg border border-gray-300 px-4 py-3 text-sm text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white"
+                onInput={syncContent}
+                onBlur={syncContent}
+                data-placeholder={placeholder || 'Start writing...'}
+                style={{ lineHeight: '1.6' }}
+            />
+        </div>
+    );
+}
+
 export function FormField({ label, type = 'text', name, value, onChange, required, placeholder, options, rows }) {
     const id = `field-${name}`;
+    if (type === 'richtext') {
+        return (
+            <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+                <RichTextEditor name={name} value={value} onChange={onChange} placeholder={placeholder} />
+            </div>
+        );
+    }
     if (type === 'select') {
         return (
             <div className="mb-4">

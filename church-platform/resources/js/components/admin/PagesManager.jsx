@@ -112,6 +112,9 @@ export default function PagesManager() {
             <Alert {...alert} onClose={() => setAlert(null)} />
             <DataTable columns={columns} data={items} actions={(item) => (
                 <div className="flex gap-2">
+                    {item.status === 'published' && (
+                        <a href={`/page/${item.slug}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-800 text-sm font-medium">View</a>
+                    )}
                     <button onClick={() => openEdit(item)} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">Edit</button>
                     <button onClick={() => handleDelete(item)} className="text-red-600 hover:text-red-800 text-sm font-medium">Delete</button>
                 </div>
@@ -120,7 +123,7 @@ export default function PagesManager() {
             {modal && (
                 <Modal isOpen={true} title={editing ? 'Edit Page' : 'New Page'} onClose={() => setModal(false)}>
                     <FormField label="Title" name="title" value={form.title} onChange={handleChange} required />
-                    <FormField label="Content" name="content" type="textarea" value={form.content} onChange={handleChange} rows={8} />
+                    <FormField label="Content" name="content" type="richtext" value={form.content} onChange={handleChange} placeholder="Write page content..." />
                     <FormField label="Excerpt" name="excerpt" type="textarea" value={form.excerpt} onChange={handleChange} rows={2} />
                     <div className="grid grid-cols-2 gap-4">
                         <FormField label="Status" name="status" type="select" value={form.status} onChange={handleChange} options={[{ value: 'draft', label: 'Draft' }, { value: 'published', label: 'Published' }]} />
