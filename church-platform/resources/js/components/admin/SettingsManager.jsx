@@ -21,6 +21,18 @@ function SectionHeader({ icon, title, description }) {
 export default function SettingsManager() {
     const [activeTab, setActiveTab] = useState('general');
 
+    // Custom profile fields
+    const [profileFields, setProfileFields] = useState([]);
+    const [profileFieldsSaving, setProfileFieldsSaving] = useState(false);
+    const [profileFieldsAlert, setProfileFieldsAlert] = useState(null);
+
+    const defaultFields = [
+        { key: 'phone', label: 'Phone Number', type: 'tel', required: false, enabled: false, options: '', placeholder: 'Enter phone number' },
+        { key: 'church_name', label: 'Church Name', type: 'text', required: false, enabled: false, options: '', placeholder: 'Enter church name' },
+        { key: 'social_id', label: 'Social ID', type: 'text', required: false, enabled: false, options: '', placeholder: 'Enter social ID' },
+        { key: 'spiritual_background', label: 'Spiritual Background', type: 'textarea', required: false, enabled: false, options: '', placeholder: 'Describe your spiritual background' },
+    ];
+
     // Auth provider settings
     const [authForm, setAuthForm] = useState({
         auth_google_enabled: false,
@@ -128,6 +140,7 @@ export default function SettingsManager() {
         fetchSettings();
         fetchEmailSettings();
         fetchExtendedSettings();
+        fetchProfileFields();
     }, []);
 
     const fetchExtendedSettings = async () => {
@@ -169,6 +182,53 @@ export default function SettingsManager() {
                 }));
             }
         } catch (e) { /* silently fail */ }
+    };
+
+    const fetchProfileFields = async () => {
+        try {
+            const data = await get('/api/settings/profile-fields');
+            const fields = data.data || [];
+            if (fields.length > 0) {
+                setProfileFields(fields);
+            } else {
+                setProfileFields(defaultFields);
+            }
+        } catch (e) {
+            setProfileFields(defaultFields);
+        }
+    };
+
+    const handleProfileFieldChange = (index, key, value) => {
+        setProfileFields(prev => prev.map((f, i) => i === index ? { ...f, [key]: value } : f));
+    };
+
+    const addCustomField = () => {
+        setProfileFields(prev => [...prev, {
+            key: 'custom_' + Date.now(),
+            label: '',
+            type: 'text',
+            required: false,
+            enabled: false,
+            options: '',
+            placeholder: '',
+        }]);
+    };
+
+    const removeCustomField = (index) => {
+        const field = profileFields[index];
+        if (['phone', 'church_name', 'social_id', 'spiritual_background'].includes(field.key)) return;
+        setProfileFields(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleSaveProfileFields = async () => {
+        setProfileFieldsSaving(true);
+        try {
+            await put('/api/settings/profile-fields', { fields: profileFields });
+            setProfileFieldsAlert({ type: 'success', message: 'Profile fields configuration saved.' });
+        } catch (e) {
+            setProfileFieldsAlert({ type: 'error', message: e.message || 'Failed to save profile fields.' });
+        }
+        setProfileFieldsSaving(false);
     };
 
     const handleSaveAuth = async () => {
@@ -385,6 +445,7 @@ export default function SettingsManager() {
                     { id: 'storage', label: 'Uploading', icon: 'fa-cloud-upload-alt' },
                     { id: 'cache', label: 'Cache', icon: 'fa-bolt' },
                     { id: 'logging', label: 'Logging & Queue', icon: 'fa-stream' },
+                    { id: 'userfields', label: 'User Fields', icon: 'fa-user-cog' },
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -1058,6 +1119,102 @@ export default function SettingsManager() {
                     <div className="flex justify-end pb-4">
                         <button onClick={handleSaveLogging} disabled={loggingSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
                             {loggingSaving ? 'Saving...' : 'Save Logging & Queue Settings'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* USER FIELDS TAB */}
+            {activeTab === 'userfields' && (
+                <div>
+                    <Alert {...profileFieldsAlert} onClose={() => setProfileFieldsAlert(null)} />
+
+                    <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
+                        <SectionHeader
+                            icon={<svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+                            title="Custom User Profile Fields"
+                            description="Configure which fields users must fill during registration and in their profile. Enable a field to show it, and mark it as required to make it compulsory."
+                        />
+
+                        <div className="space-y-4">
+                            {profileFields.map((field, index) => {
+                                const isBuiltIn = ['phone', 'church_name', 'social_id', 'spiritual_background'].includes(field.key);
+                                return (
+                                    <div key={field.key} className={`border rounded-lg p-4 ${field.enabled ? 'border-indigo-200 bg-indigo-50/30' : 'border-gray-200 bg-gray-50/30'}`}>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <label className="relative inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" checked={field.enabled} onChange={(e) => handleProfileFieldChange(index, 'enabled', e.target.checked)} className="sr-only peer" />
+                                                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                </label>
+                                                {isBuiltIn ? (
+                                                    <span className="font-medium text-gray-900">{field.label}</span>
+                                                ) : (
+                                                    <input
+                                                        type="text" value={field.label} placeholder="Field label"
+                                                        onChange={(e) => handleProfileFieldChange(index, 'label', e.target.value)}
+                                                        className="font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 text-sm"
+                                                    />
+                                                )}
+                                                {isBuiltIn && <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Built-in</span>}
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <label className="flex items-center gap-2 text-sm">
+                                                    <input type="checkbox" checked={field.required} onChange={(e) => handleProfileFieldChange(index, 'required', e.target.checked)} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+                                                    <span className={field.required ? 'text-red-600 font-medium' : 'text-gray-500'}>Required</span>
+                                                </label>
+                                                {!isBuiltIn && (
+                                                    <button onClick={() => removeCustomField(index)} className="text-red-400 hover:text-red-600 text-sm" title="Remove field">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {field.enabled && (
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pl-12">
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">Field Type</label>
+                                                    <select value={field.type} onChange={(e) => handleProfileFieldChange(index, 'type', e.target.value)}
+                                                        className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" disabled={isBuiltIn}>
+                                                        <option value="text">Text</option>
+                                                        <option value="textarea">Textarea</option>
+                                                        <option value="email">Email</option>
+                                                        <option value="tel">Phone</option>
+                                                        <option value="url">URL</option>
+                                                        <option value="select">Dropdown</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">Placeholder</label>
+                                                    <input type="text" value={field.placeholder || ''} onChange={(e) => handleProfileFieldChange(index, 'placeholder', e.target.value)}
+                                                        className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" placeholder="Placeholder text" />
+                                                </div>
+                                                {field.type === 'select' && (
+                                                    <div>
+                                                        <label className="block text-xs text-gray-500 mb-1">Options (comma-separated)</label>
+                                                        <input type="text" value={field.options || ''} onChange={(e) => handleProfileFieldChange(index, 'options', e.target.value)}
+                                                            className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm" placeholder="Option 1, Option 2, Option 3" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                            <button onClick={addCustomField} className="text-sm text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                Add Custom Field
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pb-4">
+                        <button onClick={handleSaveProfileFields} disabled={profileFieldsSaving} className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50">
+                            {profileFieldsSaving ? 'Saving...' : 'Save User Fields'}
                         </button>
                     </div>
                 </div>

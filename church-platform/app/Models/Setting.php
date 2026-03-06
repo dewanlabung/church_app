@@ -14,6 +14,7 @@ class Setting extends Model
         'widget_config' => 'array',
         'themes_config' => 'array',
         'mobile_theme_config' => 'array',
+        'custom_profile_fields' => 'array',
         'email_contact_notification' => 'boolean',
         'email_newsletter_enabled' => 'boolean',
         'email_welcome_enabled' => 'boolean',

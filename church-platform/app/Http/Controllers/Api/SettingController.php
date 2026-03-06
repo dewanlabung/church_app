@@ -297,6 +297,46 @@ class SettingController extends Controller
     /**
      * Save homepage widget configuration.
      */
+    /**
+     * Get custom profile fields configuration.
+     */
+    public function profileFields(): JsonResponse
+    {
+        $setting = Setting::first();
+        $fields = $setting->custom_profile_fields ?? [];
+
+        return response()->json([
+            'success' => true,
+            'data' => $fields,
+        ]);
+    }
+
+    /**
+     * Update custom profile fields configuration.
+     */
+    public function updateProfileFields(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'fields' => 'required|array',
+            'fields.*.key' => 'required|string|max:50',
+            'fields.*.label' => 'required|string|max:100',
+            'fields.*.type' => 'required|in:text,textarea,select,email,tel,url',
+            'fields.*.required' => 'required|boolean',
+            'fields.*.enabled' => 'required|boolean',
+            'fields.*.options' => 'nullable|string',
+            'fields.*.placeholder' => 'nullable|string|max:200',
+        ]);
+
+        $setting = Setting::firstOrCreate([], ['church_name' => config('app.name')]);
+        $setting->update(['custom_profile_fields' => $validated['fields']]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile fields configuration saved.',
+            'data' => $setting->fresh()->custom_profile_fields,
+        ]);
+    }
+
     public function updateWidgetConfig(Request $request): JsonResponse
     {
         $validated = $request->validate([

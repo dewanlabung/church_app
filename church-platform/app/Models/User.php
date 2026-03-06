@@ -13,7 +13,9 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'is_admin', 'role_id', 'church_id',
-        'avatar', 'bio', 'phone', 'provider', 'provider_id',
+        'avatar', 'bio', 'phone', 'church_name', 'social_id',
+        'spiritual_background', 'custom_fields', 'profile_completed',
+        'provider', 'provider_id',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -22,6 +24,8 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_admin' => 'boolean',
+        'custom_fields' => 'array',
+        'profile_completed' => 'boolean',
     ];
 
     public function role() { return $this->belongsTo(Role::class); }

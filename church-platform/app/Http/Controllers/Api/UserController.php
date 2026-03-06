@@ -30,10 +30,15 @@ class UserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|max:255|unique:users,email',
-            'password' => 'sometimes|string|min:8',
-            'is_admin' => 'sometimes|boolean',
+            'name'                  => 'required|string|max:255',
+            'email'                 => 'required|email|max:255|unique:users,email',
+            'password'              => 'sometimes|string|min:8',
+            'is_admin'              => 'sometimes|boolean',
+            'phone'                 => 'nullable|string|max:30',
+            'church_name'           => 'nullable|string|max:255',
+            'social_id'             => 'nullable|string|max:255',
+            'spiritual_background'  => 'nullable|string|max:2000',
+            'custom_fields'         => 'nullable|array',
         ]);
 
         if (empty($validated['password'])) {
@@ -52,10 +57,15 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name'     => 'sometimes|required|string|max:255',
-            'email'    => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'sometimes|string|min:8',
-            'is_admin' => 'sometimes|boolean',
+            'name'                  => 'sometimes|required|string|max:255',
+            'email'                 => 'sometimes|required|email|max:255|unique:users,email,' . $user->id,
+            'password'              => 'sometimes|string|min:8',
+            'is_admin'              => 'sometimes|boolean',
+            'phone'                 => 'nullable|string|max:30',
+            'church_name'           => 'nullable|string|max:255',
+            'social_id'             => 'nullable|string|max:255',
+            'spiritual_background'  => 'nullable|string|max:2000',
+            'custom_fields'         => 'nullable|array',
         ]);
 
         $user->update($validated);

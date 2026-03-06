@@ -793,6 +793,108 @@ var authToken = localStorage.getItem('auth_token') || null;
 var authUser = null;
 try { authUser = JSON.parse(localStorage.getItem('auth_user')); } catch(e) {}
 
+var customProfileFields = [];
+
+function loadCustomProfileFields() {
+  fetch(API + '/settings/profile-fields/public', { headers: { 'Accept': 'application/json' } })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      customProfileFields = (data.data || []).filter(function(f) { return f.enabled; });
+      renderRegCustomFields();
+      renderProfileCustomFields();
+    }).catch(function() {});
+}
+
+function renderRegCustomFields() {
+  var container = document.getElementById('reg-custom-fields');
+  if (!container) return;
+  container.innerHTML = '';
+  customProfileFields.forEach(function(field) {
+    var div = document.createElement('div');
+    div.className = 'form-group';
+    var label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = field.label + (field.required ? ' *' : '');
+    div.appendChild(label);
+
+    var input;
+    if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'form-input';
+      input.rows = 3;
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'form-input';
+      var defOpt = document.createElement('option');
+      defOpt.value = ''; defOpt.textContent = 'Select...';
+      input.appendChild(defOpt);
+      (field.options || '').split(',').forEach(function(opt) {
+        opt = opt.trim();
+        if (opt) { var o = document.createElement('option'); o.value = opt; o.textContent = opt; input.appendChild(o); }
+      });
+    } else {
+      input = document.createElement('input');
+      input.className = 'form-input';
+      input.type = field.type || 'text';
+    }
+    input.id = 'reg-cf-' + field.key;
+    input.placeholder = field.placeholder || '';
+    if (field.required) input.required = true;
+    div.appendChild(input);
+    container.appendChild(div);
+  });
+}
+
+function renderProfileCustomFields() {
+  var container = document.getElementById('profile-custom-fields');
+  if (!container) return;
+  container.innerHTML = '';
+  if (customProfileFields.length === 0) return;
+  var border = document.createElement('div');
+  border.style.cssText = 'border-top:1px solid var(--border);margin:1rem 0;padding-top:1rem';
+  var title = document.createElement('p');
+  title.style.cssText = 'color:var(--text-muted);font-size:0.82rem;margin-bottom:0.8rem;font-weight:600';
+  title.textContent = 'Profile Information';
+  container.appendChild(border);
+  container.appendChild(title);
+  customProfileFields.forEach(function(field) {
+    var div = document.createElement('div');
+    div.className = 'form-group';
+    var label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = field.label + (field.required ? ' *' : '');
+    div.appendChild(label);
+
+    var input;
+    if (field.type === 'textarea') {
+      input = document.createElement('textarea');
+      input.className = 'form-input';
+      input.rows = 3;
+    } else if (field.type === 'select') {
+      input = document.createElement('select');
+      input.className = 'form-input';
+      var defOpt = document.createElement('option');
+      defOpt.value = ''; defOpt.textContent = 'Select...';
+      input.appendChild(defOpt);
+      (field.options || '').split(',').forEach(function(opt) {
+        opt = opt.trim();
+        if (opt) { var o = document.createElement('option'); o.value = opt; o.textContent = opt; input.appendChild(o); }
+      });
+    } else {
+      input = document.createElement('input');
+      input.className = 'form-input';
+      input.type = field.type || 'text';
+    }
+    input.id = 'profile-cf-' + field.key;
+    input.placeholder = field.placeholder || '';
+    div.appendChild(input);
+    container.appendChild(div);
+  });
+}
+
+// Load custom fields on page load
+loadCustomProfileFields();
+
 function updateAuthUI() {
   var loginBtn = document.getElementById('auth-login-btn');
   var userMenu = document.getElementById('auth-user-menu');
@@ -807,11 +909,25 @@ function updateAuthUI() {
     document.getElementById('auth-dropdown-email').textContent = authUser.email || '';
     if (mobileLoginBtn) mobileLoginBtn.style.display = 'none';
     if (mobileUserInfo) { mobileUserInfo.style.display = ''; document.getElementById('mobile-user-name').textContent = authUser.name || ''; }
+    // Show admin panel link only for admins
+    var adminLink = document.getElementById('admin-panel-link');
+    var mobileAdminLink = document.getElementById('mobile-admin-link');
+    if (authUser.is_admin) {
+      if (adminLink) adminLink.style.display = '';
+      if (mobileAdminLink) mobileAdminLink.style.display = '';
+    } else {
+      if (adminLink) adminLink.style.display = 'none';
+      if (mobileAdminLink) mobileAdminLink.style.display = 'none';
+    }
   } else {
     loginBtn.style.display = '';
     userMenu.style.display = 'none';
     if (mobileLoginBtn) mobileLoginBtn.style.display = '';
     if (mobileUserInfo) mobileUserInfo.style.display = 'none';
+    var adminLink = document.getElementById('admin-panel-link');
+    var mobileAdminLink = document.getElementById('mobile-admin-link');
+    if (adminLink) adminLink.style.display = 'none';
+    if (mobileAdminLink) mobileAdminLink.style.display = 'none';
   }
 }
 
@@ -980,12 +1096,30 @@ function doRegister() {
   if (password.length < 8) { errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = ''; return; }
   if (password !== confirm) { errEl.textContent = 'Passwords do not match.'; errEl.style.display = ''; return; }
 
+  // Collect custom profile fields
+  var builtInKeys = ['phone', 'church_name', 'social_id', 'spiritual_background'];
+  var payload = { name: name, email: email, password: password, password_confirmation: confirm };
+  var customFieldsData = {};
+  var missingRequired = [];
+  customProfileFields.forEach(function(field) {
+    var el = document.getElementById('reg-cf-' + field.key);
+    var val = el ? el.value.trim() : '';
+    if (field.required && !val) { missingRequired.push(field.label); }
+    if (builtInKeys.indexOf(field.key) !== -1) {
+      payload[field.key] = val || null;
+    } else {
+      if (val) customFieldsData[field.key] = val;
+    }
+  });
+  if (missingRequired.length > 0) { errEl.textContent = 'Please fill in required fields: ' + missingRequired.join(', '); errEl.style.display = ''; return; }
+  if (Object.keys(customFieldsData).length > 0) payload.custom_fields = customFieldsData;
+
   var btn = document.getElementById('reg-submit-btn');
   btn.disabled = true; btn.textContent = 'Creating account...';
 
   apiCall('/register', {
     method: 'POST',
-    body: JSON.stringify({ name: name, email: email, password: password, password_confirmation: confirm })
+    body: JSON.stringify(payload)
   }).then(function(res) {
     btn.disabled = false; btn.textContent = 'Create Account';
     if (res && res.token) {
@@ -1082,6 +1216,18 @@ function openProfileEdit() {
   document.getElementById('profile-password-confirm').value = '';
   document.getElementById('profile-error').style.display = 'none';
   document.getElementById('profile-success').style.display = 'none';
+  // Populate custom fields with current user data
+  var builtInKeys = ['phone', 'church_name', 'social_id', 'spiritual_background'];
+  customProfileFields.forEach(function(field) {
+    var el = document.getElementById('profile-cf-' + field.key);
+    if (el) {
+      if (builtInKeys.indexOf(field.key) !== -1) {
+        el.value = authUser[field.key] || '';
+      } else {
+        el.value = (authUser.custom_fields && authUser.custom_fields[field.key]) || '';
+      }
+    }
+  });
   openModal('profile');
 }
 
@@ -1104,6 +1250,19 @@ function doUpdateProfile() {
 
   var payload = { name: name, email: email };
   if (password) { payload.password = password; payload.password_confirmation = confirm; }
+  // Collect custom profile fields
+  var builtInKeys = ['phone', 'church_name', 'social_id', 'spiritual_background'];
+  var customFieldsData = {};
+  customProfileFields.forEach(function(field) {
+    var el = document.getElementById('profile-cf-' + field.key);
+    var val = el ? el.value.trim() : '';
+    if (builtInKeys.indexOf(field.key) !== -1) {
+      payload[field.key] = val || null;
+    } else {
+      if (val) customFieldsData[field.key] = val;
+    }
+  });
+  if (Object.keys(customFieldsData).length > 0) payload.custom_fields = customFieldsData;
 
   fetch(API + '/profile', {
     method: 'PUT',

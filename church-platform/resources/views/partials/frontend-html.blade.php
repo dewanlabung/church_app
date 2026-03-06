@@ -22,6 +22,9 @@
               <div class="auth-dropdown-email" id="auth-dropdown-email"></div>
             </div>
             <div class="auth-dropdown-divider"></div>
+            <a class="auth-dropdown-item" id="admin-panel-link" href="/admin" style="display:none;text-decoration:none;color:inherit;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Admin Panel
+            </a>
             <button class="auth-dropdown-item" onclick="openProfileEdit()">Edit Profile</button>
             <button class="auth-dropdown-item" onclick="doLogout()">Sign Out</button>
           </div>
@@ -46,6 +49,9 @@
       <div class="mobile-nav-item" style="cursor:default;color:var(--gold)">
         <span class="mobile-nav-icon">&#128100;</span><span id="mobile-user-name"></span>
       </div>
+      <a class="mobile-nav-item" id="mobile-admin-link" href="/admin" style="display:none;text-decoration:none;color:inherit;">
+        <span class="mobile-nav-icon">&#9881;</span>Admin Panel
+      </a>
       <button class="mobile-nav-item" onclick="openProfileEdit(); closeMobile()">
         <span class="mobile-nav-icon">&#9998;</span>Edit Profile
       </button>
@@ -519,6 +525,8 @@
         <label class="form-label">Email</label>
         <input class="form-input" id="reg-email" type="email" placeholder="Enter your email">
       </div>
+      <!-- Dynamic custom profile fields (populated by JS) -->
+      <div id="reg-custom-fields"></div>
       <div class="form-group">
         <label class="form-label">Password</label>
         <input class="form-input" id="reg-password" type="password" placeholder="Create a password (min 8 characters)">
@@ -614,6 +622,8 @@
       <label class="form-label">Email</label>
       <input class="form-input" id="profile-email" type="email" placeholder="Your email">
     </div>
+    <!-- Dynamic custom profile fields (populated by JS) -->
+    <div id="profile-custom-fields"></div>
     <div style="border-top:1px solid var(--border);margin:1rem 0;padding-top:1rem">
       <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:0.8rem">Leave password fields empty to keep current password.</p>
       <div class="form-group">

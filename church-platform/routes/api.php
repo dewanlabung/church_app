@@ -84,6 +84,9 @@ Route::get('/categories', [CategoryController::class, 'all']);
 // Menus (public)
 Route::get('/menus/{location}', [MenuController::class, 'show']);
 
+// Custom Profile Fields (public - for registration form)
+Route::get('/settings/profile-fields/public', [SettingController::class, 'profileFields']);
+
 // Mobile Theme (public)
 Route::get('/mobile-theme', [MobileThemeController::class, 'show']);
 Route::get('/pwa-config', [MobileThemeController::class, 'pwaConfig']);
@@ -263,6 +266,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Homepage Widget Config
     Route::get('/settings/widgets', [SettingController::class, 'widgetConfig']);
     Route::put('/settings/widgets', [SettingController::class, 'updateWidgetConfig']);
+
+    // Custom Profile Fields Config
+    Route::get('/settings/profile-fields', [SettingController::class, 'profileFields']);
+    Route::put('/settings/profile-fields', [SettingController::class, 'updateProfileFields']);
 
     // Appearance (admin)
     Route::put('/appearance', [AppearanceController::class, 'update']);

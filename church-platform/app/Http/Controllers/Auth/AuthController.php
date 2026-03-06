@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -18,16 +19,43 @@ class AuthController extends Controller
      */
     public function register(Request $request): JsonResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+            'phone'                 => ['nullable', 'string', 'max:30'],
+            'church_name'           => ['nullable', 'string', 'max:255'],
+            'social_id'             => ['nullable', 'string', 'max:255'],
+            'spiritual_background'  => ['nullable', 'string', 'max:2000'],
+            'custom_fields'         => ['nullable', 'array'],
+        ];
+
+        // Apply required rules from custom profile fields config
+        $setting = Setting::first();
+        $profileFields = $setting->custom_profile_fields ?? [];
+        foreach ($profileFields as $field) {
+            if (($field['enabled'] ?? false) && ($field['required'] ?? false)) {
+                $key = $field['key'] ?? '';
+                if (in_array($key, ['phone', 'church_name', 'social_id', 'spiritual_background'])) {
+                    $rules[$key][0] = 'required';
+                } else {
+                    $rules["custom_fields.{$key}"] = ['required', 'string', 'max:2000'];
+                }
+            }
+        }
+
+        $validated = $request->validate($rules);
 
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'name'                  => $validated['name'],
+            'email'                 => $validated['email'],
+            'password'              => Hash::make($validated['password']),
+            'phone'                 => $validated['phone'] ?? null,
+            'church_name'           => $validated['church_name'] ?? null,
+            'social_id'             => $validated['social_id'] ?? null,
+            'spiritual_background'  => $validated['spiritual_background'] ?? null,
+            'custom_fields'         => $validated['custom_fields'] ?? null,
+            'profile_completed'     => true,
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -95,9 +123,14 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name'     => ['sometimes', 'required', 'string', 'max:255'],
-            'email'    => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'password' => ['sometimes', 'required', 'confirmed', Rules\Password::defaults()],
+            'name'                  => ['sometimes', 'required', 'string', 'max:255'],
+            'email'                 => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'password'              => ['sometimes', 'required', 'confirmed', Rules\Password::defaults()],
+            'phone'                 => ['nullable', 'string', 'max:30'],
+            'church_name'           => ['nullable', 'string', 'max:255'],
+            'social_id'             => ['nullable', 'string', 'max:255'],
+            'spiritual_background'  => ['nullable', 'string', 'max:2000'],
+            'custom_fields'         => ['nullable', 'array'],
         ]);
 
         if (isset($validated['password'])) {
@@ -167,10 +200,11 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return redirect('/?auth_token=' . $token . '&auth_user=' . urlencode(json_encode([
-            'id'     => $user->id,
-            'name'   => $user->name,
-            'email'  => $user->email,
-            'avatar' => $user->avatar,
+            'id'       => $user->id,
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'avatar'   => $user->avatar,
+            'is_admin' => $user->is_admin,
         ])));
     }
 }
