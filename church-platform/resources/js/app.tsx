@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { router } from '@/router';
 import { useThemeStore } from '@/stores/themeStore';
 import { useThemeCss, useSettings } from '@/hooks/useApi';
+import { useSocket } from '@/hooks/useSocket';
 import './bootstrap';
 
 // ── Query client ──────────────────────────────────────────────────────────
@@ -24,6 +25,9 @@ function AppBootstrap() {
   // Load theme CSS and app settings on mount
   useThemeCss();
   useSettings();
+
+  // Init Workerman socket connection (no-op if VITE_SOCKET_URL is not set)
+  useSocket();
 
   const applyTheme = useThemeStore((s) => s.applyTheme);
   useEffect(() => {

@@ -4,6 +4,7 @@ namespace Plugins\Notification\Services;
 
 use App\Core\SettingsManager;
 use App\Models\User;
+use App\Services\SocketBroadcaster;
 use Illuminate\Support\Facades\DB;
 use Plugins\Notification\Jobs\SendEmailNotificationJob;
 use Plugins\Notification\Jobs\SendPushNotificationJob;
@@ -65,13 +66,13 @@ class NotificationService
                 'updated_at' => now(),
             ]);
 
-            // Broadcast via Reverb WebSocket
-            broadcast(new \Plugins\Notification\Events\InAppNotificationEvent($recipient->id, [
+            // Push via Workerman socket server
+            SocketBroadcaster::send($recipient->id, 'notification', [
                 'id'      => $notif,
                 'type'    => $type,
                 'message' => $message,
                 'data'    => $data,
-            ]))->toOthers();
+            ]);
         }
 
         // Check user preferences

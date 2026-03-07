@@ -2,29 +2,20 @@
 
 namespace Plugins\Notification\Events;
 
-use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PrivateChannel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class InAppNotificationEvent implements ShouldBroadcast
+/**
+ * Fired after an in-app notification is persisted to notifications_log.
+ * Real-time delivery is handled by SocketBroadcaster (Workerman), not Laravel's
+ * broadcast() helper — so this event does NOT implement ShouldBroadcast.
+ */
+class InAppNotificationEvent
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, SerializesModels;
 
     public function __construct(
         public readonly int   $userId,
         public readonly array $notification
     ) {}
-
-    public function broadcastOn(): array
-    {
-        return [new PrivateChannel("user.{$this->userId}")];
-    }
-
-    public function broadcastAs(): string
-    {
-        return 'notification';
-    }
 }
