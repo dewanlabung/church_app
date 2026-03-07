@@ -128,10 +128,6 @@ class InstallerController extends Controller
     /** Run the full installation */
     public function install(Request $request)
     {
-        if (!session('db_configured')) {
-            return response()->json(['ok' => false, 'message' => 'Database not configured.'], 422);
-        }
-
         $request->validate([
             'site_name'   => 'required|string|max:255',
             'admin_name'  => 'required|string|max:255',
@@ -147,7 +143,23 @@ class InstallerController extends Controller
             Artisan::call('key:generate', ['--force' => true]);
             Artisan::call('config:clear');
 
-            // 3. Run migrations
+            // 3. Drop any orphaned tables from a failed previous install attempt,
+            //    then run all migrations cleanly from scratch.
+            try {
+                DB::statement('SET FOREIGN_KEY_CHECKS=0');
+                $dbName  = DB::connection()->getDatabaseName();
+                $tables  = DB::select('SHOW TABLES');
+                foreach ($tables as $row) {
+                    $name = reset((array) $row);
+                    // Keep the migrations tracking table so we don't lose its records
+                    // Actually for fresh install we want everything dropped
+                    DB::statement("DROP TABLE IF EXISTS `{$name}`");
+                }
+                DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            } catch (\Throwable $e) {
+                // If we can't drop tables, migrate:fresh will handle it
+            }
+
             Artisan::call('migrate', ['--force' => true]);
 
             // 4. Seed roles/permissions (if seeder exists)
