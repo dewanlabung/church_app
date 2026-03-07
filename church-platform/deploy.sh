@@ -185,6 +185,35 @@ step_migrate() {
     echo ""
 }
 
+step_fresh() {
+    echo -e "${YELLOW}[migrate:fresh] Dropping all tables and re-running migrations...${NC}"
+    if [ ! -f ".env" ]; then
+        fail ".env not found — run setup first: bash deploy.sh setup"
+        return
+    fi
+    warn "This will DELETE all data in the database!"
+    read -r -p "  Are you sure? Type YES to continue: " confirm
+    if [ "$confirm" != "YES" ]; then
+        info "Aborted."
+        return
+    fi
+    # Drop all tables with FK checks disabled
+    $PHP artisan tinker --execute="
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        collect(DB::select('SHOW TABLES'))->each(function(\$t){
+            DB::statement('DROP TABLE IF EXISTS \`'.reset((array)\$t).'\`');
+        });
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        echo 'All tables dropped.';
+    " 2>/dev/null
+    if $PHP artisan migrate --force 2>&1; then
+        ok "Fresh migration complete"
+    else
+        fail "Migration failed — check DB credentials in .env"
+    fi
+    echo ""
+}
+
 step_build() {
     echo -e "${YELLOW}[build] Building frontend assets...${NC}"
     if [ -d "public/build" ]; then
@@ -243,6 +272,9 @@ case "${1:-all}" in
     migrate)
         step_migrate
         ;;
+    fresh)
+        step_fresh
+        ;;
     build)
         step_build
         ;;
@@ -269,6 +301,7 @@ case "${1:-all}" in
         echo "  pull        Git pull only"
         echo "  composer    Install PHP dependencies"
         echo "  migrate     Run database migrations"
+        echo "  fresh       Drop ALL tables and re-run migrations (⚠ deletes data)"
         echo "  build       Build frontend assets (npm run build)"
         echo "  cache       Clear and rebuild Laravel caches"
         echo ""
