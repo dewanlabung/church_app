@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('community_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignId('church_page_id')->nullable()->constrained('church_pages')->nullOnDelete();
+            $table->unsignedBigInteger('community_id')->nullable();    // no DB FK — communities table may not exist yet
+            $table->unsignedBigInteger('church_page_id')->nullable(); // no DB FK — church_pages table may not exist yet
             $table->string('title');
             $table->text('description')->nullable();
             $table->string('location')->nullable();

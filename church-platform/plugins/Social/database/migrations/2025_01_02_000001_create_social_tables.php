@@ -33,8 +33,8 @@ return new class extends Migration
             $table->text('bible_text')->nullable();
             $table->boolean('is_anonymous')->default(false);
             $table->boolean('is_pinned')->default(false);
-            $table->foreignId('community_id')->nullable()->constrained('communities')->nullOnDelete();
-            $table->foreignId('church_id')->nullable()->constrained('churches')->nullOnDelete();
+            $table->unsignedBigInteger('community_id')->nullable();   // FK to communities (no constraint — avoids migration order dependency)
+            $table->unsignedBigInteger('church_id')->nullable();       // FK to church_pages (no constraint — avoids migration order dependency)
             $table->foreignId('parent_id')->nullable()->constrained('social_posts')->nullOnDelete();
             $table->unsignedBigInteger('views_count')->default(0);
             $table->unsignedBigInteger('shares_count')->default(0);

@@ -11,10 +11,10 @@ return new class extends Migration
         Schema::create('communities', function (Blueprint $table) {
             $table->id();
             $table->foreignId('owner_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('church_id')->nullable()->constrained('churches')->nullOnDelete();
+            $table->unsignedBigInteger('church_id')->nullable(); // no DB FK — church_pages table not yet created at this point
             $table->string('name');
             $table->string('slug')->unique();
-            $table->text('description')->nullable();
+            $table->text('about')->nullable();
             $table->string('cover_image')->nullable();
             $table->string('avatar')->nullable();
             $table->enum('type', ['public', 'private', 'hidden'])->default('public');
