@@ -1,0 +1,26 @@
+{
+  "name": "Default",
+  "slug": "default",
+  "version": "1.0.0",
+  "description": "Clean church community theme with warm indigo tones.",
+  "author": "Church Platform",
+  "supports": ["dark_mode", "custom_colors", "custom_fonts", "logo"],
+  "colors": {
+    "primary":     "#4F46E5",
+    "primary-hover":"#4338CA",
+    "accent":      "#7C3AED",
+    "background":  "#FFFFFF",
+    "surface":     "#F3F4F6",
+    "surface-2":   "#E5E7EB",
+    "border":      "#D1D5DB",
+    "text":        "#111827",
+    "text-muted":  "#6B7280",
+    "success":     "#059669",
+    "warning":     "#D97706",
+    "danger":      "#DC2626"
+  },
+  "fonts": {
+    "heading": "Inter",
+    "body":    "Inter"
+  }
+}

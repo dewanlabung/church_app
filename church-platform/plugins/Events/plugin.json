@@ -1,0 +1,15 @@
+{
+  "name": "Events",
+  "slug": "Events",
+  "version": "1.0.0",
+  "description": "Create events, RSVP (Going/Interested/Not Going), reminders, calendar view.",
+  "author": "Church Platform",
+  "icon": "calendar",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

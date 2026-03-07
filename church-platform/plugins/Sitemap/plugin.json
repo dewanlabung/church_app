@@ -1,0 +1,15 @@
+{
+  "name": "Sitemaps",
+  "slug": "Sitemap",
+  "version": "1.0.0",
+  "description": "Auto-generate sitemaps for users, churches, communities, events, bible studies.",
+  "author": "Church Platform",
+  "icon": "map",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

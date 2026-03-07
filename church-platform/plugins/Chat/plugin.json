@@ -1,0 +1,15 @@
+{
+  "name": "Direct Messages",
+  "slug": "Chat",
+  "version": "1.0.0",
+  "description": "Real-time private messaging via Laravel Reverb WebSocket.",
+  "author": "Church Platform",
+  "icon": "message-square",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

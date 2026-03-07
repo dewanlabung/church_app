@@ -1,0 +1,15 @@
+{
+  "name": "Advertisements",
+  "slug": "Ads",
+  "version": "1.0.0",
+  "description": "Ad placement engine — feed, sidebar, church page banner, role suppression.",
+  "author": "Church Platform",
+  "icon": "megaphone",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

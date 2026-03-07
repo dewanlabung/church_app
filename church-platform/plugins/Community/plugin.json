@@ -1,0 +1,15 @@
+{
+  "name": "Church Community",
+  "slug": "Community",
+  "version": "1.0.0",
+  "description": "Church communities (replaces Groups) — public/private/hidden, roles, discovery.",
+  "author": "Church Platform",
+  "icon": "users",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

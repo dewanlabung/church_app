@@ -1,0 +1,15 @@
+{
+  "name": "Social Feed",
+  "slug": "Social",
+  "version": "1.0.0",
+  "description": "Sngine-style social feed — posts, follows, user timelines.",
+  "author": "Church Platform",
+  "icon": "layout",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Daily Verse",
+  "slug": "DailyVerse",
+  "version": "1.0.0",
+  "description": "Daily Bible verse widget with CSV import/export, Redis cache, push at 6am.",
+  "author": "Church Platform",
+  "icon": "quote",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

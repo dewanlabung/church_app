@@ -1,0 +1,15 @@
+{
+  "name": "Newsletter",
+  "slug": "Newsletter",
+  "version": "1.0.0",
+  "description": "Subscriber management, HTML template builder, bulk send, GDPR consent.",
+  "author": "Church Platform",
+  "icon": "mail",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

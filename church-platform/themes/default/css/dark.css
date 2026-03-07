@@ -1,0 +1,9 @@
+/* Church Platform — Default Theme: Dark Mode Overrides */
+[data-theme="dark"] {
+  --color-background:  #0F172A;
+  --color-surface:     #1E293B;
+  --color-surface-2:   #334155;
+  --color-border:      #475569;
+  --color-text:        #F1F5F9;
+  --color-text-muted:  #94A3B8;
+}

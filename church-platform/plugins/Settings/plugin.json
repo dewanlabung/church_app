@@ -1,0 +1,14 @@
+{
+  "name": "Settings",
+  "slug": "Settings",
+  "version": "1.0.0",
+  "description": "Core settings panel — general, SEO, cache, security, menus, appearance, email, storage, GDPR, ADS, analytics, system.",
+  "author": "Church Platform",
+  "icon": "settings",
+  "category": "Core",
+  "requires": [],
+  "optional": [],
+  "settings_page": false,
+  "can_disable": false,
+  "can_remove": false
+}

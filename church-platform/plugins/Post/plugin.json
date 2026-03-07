@@ -1,0 +1,15 @@
+{
+  "name": "Posts",
+  "slug": "Post",
+  "version": "1.0.0",
+  "description": "Post engine — text, photo, video, poll, blessing, prayer_request, ask_question, bible_verse.",
+  "author": "Church Platform",
+  "icon": "file-text",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": true
+}

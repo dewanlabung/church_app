@@ -1,0 +1,15 @@
+{
+  "name": "Library",
+  "slug": "Library",
+  "version": "1.0.0",
+  "description": "PDF reader for books, sermons, devotionals (PDF.js). Disabled by default.",
+  "author": "Church Platform",
+  "icon": "library",
+  "category": "Feature",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": false,
+  "can_disable": true,
+  "can_remove": true,
+  "enabled_by_default": false
+}

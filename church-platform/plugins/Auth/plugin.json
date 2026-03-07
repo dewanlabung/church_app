@@ -1,0 +1,14 @@
+{
+  "name": "Authentication",
+  "slug": "Auth",
+  "version": "1.0.0",
+  "description": "Core authentication: register, login, OAuth, 5 user roles, custom fields.",
+  "author": "Church Platform",
+  "icon": "shield",
+  "category": "Core",
+  "requires": [],
+  "optional": ["Notification"],
+  "settings_page": true,
+  "can_disable": false,
+  "can_remove": false
+}

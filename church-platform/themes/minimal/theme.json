@@ -1,0 +1,26 @@
+{
+  "name": "Minimal",
+  "slug": "minimal",
+  "version": "1.0.0",
+  "description": "Clean, minimal monochrome theme for distraction-free worship.",
+  "author": "Church Platform",
+  "supports": ["dark_mode", "custom_colors", "custom_fonts", "logo"],
+  "colors": {
+    "primary":     "#18181B",
+    "primary-hover":"#27272A",
+    "accent":      "#3F3F46",
+    "background":  "#FAFAFA",
+    "surface":     "#F4F4F5",
+    "surface-2":   "#E4E4E7",
+    "border":      "#D4D4D8",
+    "text":        "#18181B",
+    "text-muted":  "#71717A",
+    "success":     "#16A34A",
+    "warning":     "#CA8A04",
+    "danger":      "#DC2626"
+  },
+  "fonts": {
+    "heading": "Georgia",
+    "body":    "Inter"
+  }
+}
