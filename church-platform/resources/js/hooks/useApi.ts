@@ -83,3 +83,13 @@ export const useTodayVerse = () =>
 
 export const useGreeting = (enabled: boolean) =>
   useQuery({ queryKey: ['greeting'], queryFn: () => api.get('/greeting'), enabled });
+
+// ── Notifications ──────────────────────────────────────────────────────────
+
+export const useNotificationsQuery = (enabled: boolean) =>
+  useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => api.get('/notifications'),
+    enabled,
+    staleTime: 0,
+  });
