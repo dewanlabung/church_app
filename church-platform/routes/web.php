@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('install')->group(function () {
     // Step 1 — Requirements check
     Route::get('/',         [InstallerController::class, 'welcome'])->name('installer.welcome');
-    Route::post('/proceed', fn () => redirect('/install/database'))->name('installer.proceed');
+    Route::post('/proceed', function () {
+        session(['requirements_passed' => true]);
+        return redirect('/install/database');
+    })->name('installer.proceed');
 
     // Step 2 — Database configuration
     Route::get('/database',       [InstallerController::class, 'database'])->name('installer.database');

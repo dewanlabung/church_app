@@ -48,9 +48,6 @@ class InstallerController extends Controller
 
     public function database()
     {
-        if (!session('requirements_passed')) {
-            return redirect('/install');
-        }
         return view('installer.database');
     }
 
@@ -125,9 +122,6 @@ class InstallerController extends Controller
 
     public function admin()
     {
-        if (!session('db_configured')) {
-            return redirect('/install/database');
-        }
         return view('installer.admin');
     }
 
