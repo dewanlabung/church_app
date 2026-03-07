@@ -4,126 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Church Platform Installer</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Church Platform — Installer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 25%, #c7d2fe 50%, #ddd6fe 75%, #ede9fe 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 50%, #f4f0ff 100%);
             min-height: 100vh;
+            color: #1e293b;
         }
-        .step-connector {
-            height: 2px;
-            flex: 1;
-            transition: background-color 0.5s ease;
+        .card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px -15px rgba(79,70,229,.13), 0 4px 20px rgba(0,0,0,.06);
         }
+        .btn-primary {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 11px 24px; background: #4f46e5; color: #fff; border: none;
+            border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+            transition: background .15s, transform .1s, box-shadow .15s;
+            text-decoration: none;
+        }
+        .btn-primary:hover { background: #4338ca; box-shadow: 0 4px 14px rgba(79,70,229,.3); transform: translateY(-1px); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .btn-secondary {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 10px 20px; background: #f1f5f9; color: #475569; border: none;
+            border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer;
+            text-decoration: none; transition: background .15s;
+        }
+        .btn-secondary:hover { background: #e2e8f0; }
+        .input {
+            width: 100%; padding: 11px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+            font-size: 14px; font-family: inherit; color: #1e293b; background: #f8fafc;
+            transition: border-color .15s, box-shadow .15s; outline: none;
+        }
+        .input:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.12); background: #fff; }
+        .input.error { border-color: #ef4444; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .field { margin-bottom: 16px; }
+        .field:last-child { margin-bottom: 0; }
+        .alert-err { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; }
+        .badge-ok  { display: inline-flex; align-items: center; gap: 4px; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+        .badge-err { display: inline-flex; align-items: center; gap: 4px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+        .badge-warn{ display: inline-flex; align-items: center; gap: 4px; background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+        .check-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; background: #f8fafc; }
+        .check-row.ok  { background: #f0fdf4; }
+        .check-row.err { background: #fef2f2; }
+        .check-row.warn{ background: #fffbeb; }
+        .step-bar { display: flex; align-items: center; gap: 0; }
+        .step-node { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 0 0 auto; }
         .step-circle {
-            transition: all 0.3s ease;
+            width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; transition: all .3s;
         }
-        .step-circle.active {
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-        }
-        .step-circle.completed {
-            box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
-        }
-        .card-shadow {
-            box-shadow: 0 20px 60px -15px rgba(79, 70, 229, 0.15), 0 10px 30px -10px rgba(0, 0, 0, 0.08);
-        }
-        .pulse-glow {
-            animation: pulseGlow 2s infinite;
-        }
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
-        }
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .step-circle.done  { background: #22c55e; color: #fff; box-shadow: 0 0 0 4px rgba(34,197,94,.18); }
+        .step-circle.active{ background: #4f46e5; color: #fff; box-shadow: 0 0 0 4px rgba(79,70,229,.18); animation: pulse 2s infinite; }
+        .step-circle.future{ background: #fff; color: #94a3b8; border: 2px solid #e2e8f0; }
+        .step-line { flex: 1; height: 2px; background: #e2e8f0; transition: background .4s; }
+        .step-line.done { background: #22c55e; }
+        .step-label { font-size: 11px; font-weight: 600; text-align: center; white-space: nowrap; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(79,70,229,.4)} 50%{box-shadow:0 0 0 8px rgba(79,70,229,0)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        .fade-up { animation: fadeUp .5s ease-out; }
+        .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin-bottom: 10px; }
+        @media(max-width: 480px) { .step-label { display: none; } }
     </style>
     @stack('styles')
 </head>
-<body class="antialiased">
-    <div class="min-h-screen flex flex-col">
-        {{-- Header --}}
-        <header class="pt-8 pb-4">
-            <div class="max-w-3xl mx-auto px-4 text-center">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl card-shadow mb-4">
-                    <svg class="w-9 h-9 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v8m0 0v12m0-12H6m6 0h6M8 6h8" />
-                    </svg>
-                </div>
-                <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Church Platform</h1>
-                <p class="text-sm text-indigo-500 font-medium mt-1">Installation Wizard</p>
-            </div>
-        </header>
+<body>
+<div style="min-height:100vh; display:flex; flex-direction:column;">
 
-        {{-- Step Indicator --}}
-        @php
-            $steps = [
-                1 => 'Requirements',
-                2 => 'Database',
-                3 => 'Admin',
-                4 => 'Church Info',
-                5 => 'Install',
-            ];
-            $currentStep = $currentStep ?? 1;
-        @endphp
-        <nav class="max-w-2xl mx-auto px-4 w-full mt-2 mb-8">
-            <div class="flex items-center justify-between">
-                @foreach($steps as $stepNum => $stepLabel)
-                    <div class="flex flex-col items-center relative" style="z-index: 1;">
-                        @if($stepNum < $currentStep)
-                            {{-- Completed step --}}
-                            <div class="step-circle completed w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                        @elseif($stepNum === $currentStep)
-                            {{-- Active step --}}
-                            <div class="step-circle active pulse-glow w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
-                                <span class="text-white font-bold text-sm">{{ $stepNum }}</span>
-                            </div>
+    {{-- Header --}}
+    <header style="padding: 32px 16px 20px; text-align: center;">
+        <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(79,70,229,.15); margin-bottom:12px;">
+            <svg width="28" height="28" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M12 2L12 10M12 10H6M12 10H18M8 6H16"/>
+                <path d="M4 22V12l8-4 8 4v10"/>
+            </svg>
+        </div>
+        <div style="font-size:20px; font-weight:700; color:#1e293b;">Church Platform</div>
+        <div style="font-size:13px; color:#6366f1; font-weight:500; margin-top:2px;">Installation Wizard</div>
+    </header>
+
+    {{-- Step indicator --}}
+    @php
+        $steps = ['Requirements', 'Database', 'Admin Account'];
+        $cur = $currentStep ?? 1;
+    @endphp
+    <div style="max-width: 480px; margin: 0 auto 28px; padding: 0 20px; width:100%;">
+        <div class="step-bar">
+            @foreach($steps as $i => $label)
+                @php $n = $i + 1; @endphp
+                <div class="step-node">
+                    <div class="step-circle {{ $n < $cur ? 'done' : ($n === $cur ? 'active' : 'future') }}">
+                        @if($n < $cur)
+                            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                         @else
-                            {{-- Future step --}}
-                            <div class="step-circle w-10 h-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center">
-                                <span class="text-gray-400 font-semibold text-sm">{{ $stepNum }}</span>
-                            </div>
+                            {{ $n }}
                         @endif
-                        <span class="mt-2 text-xs font-medium {{ $stepNum === $currentStep ? 'text-indigo-700' : ($stepNum < $currentStep ? 'text-green-600' : 'text-gray-400') }} hidden sm:block">
-                            {{ $stepLabel }}
-                        </span>
                     </div>
-                    @if(!$loop->last)
-                        <div class="step-connector {{ $stepNum < $currentStep ? 'bg-green-400' : ($stepNum === $currentStep ? 'bg-indigo-200' : 'bg-gray-200') }} mx-1 mt-{{ $stepNum === $currentStep ? '0' : '0' }}" style="margin-bottom: 1.25rem;"></div>
-                    @endif
-                @endforeach
-            </div>
-        </nav>
-
-        {{-- Main Content --}}
-        <main class="flex-1 pb-12">
-            <div class="max-w-2xl mx-auto px-4">
-                <div class="bg-white rounded-2xl card-shadow overflow-hidden fade-in">
-                    @yield('content')
+                    <span class="step-label" style="color: {{ $n === $cur ? '#4f46e5' : ($n < $cur ? '#22c55e' : '#94a3b8') }}">{{ $label }}</span>
                 </div>
-            </div>
-        </main>
-
-        {{-- Footer --}}
-        <footer class="py-6 text-center">
-            <p class="text-sm text-indigo-400 font-medium">
-                <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v8m0 0v12m0-12H6m6 0h6M8 6h8" />
-                </svg>
-                Church Platform Installer
-            </p>
-        </footer>
+                @if(!$loop->last)
+                    <div class="step-line {{ $n < $cur ? 'done' : '' }}" style="margin-bottom: 20px;"></div>
+                @endif
+            @endforeach
+        </div>
     </div>
 
-    @stack('scripts')
+    {{-- Content --}}
+    <main style="flex:1; padding: 0 16px 48px;">
+        <div style="max-width: 560px; margin: 0 auto;">
+            <div class="card fade-up">
+                @yield('content')
+            </div>
+        </div>
+    </main>
+
+    <footer style="padding: 20px; text-align:center; font-size:12px; color:#94a3b8;">
+        Church Platform &copy; {{ date('Y') }}
+    </footer>
+</div>
+@stack('scripts')
 </body>
 </html>

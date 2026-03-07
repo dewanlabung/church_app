@@ -1,107 +1,186 @@
 @extends('installer.layout')
+@php $currentStep = 3; @endphp
 
 @section('content')
-<div class="p-8">
-    <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-12 h-12 bg-indigo-50 rounded-xl mb-4">
-            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800">Admin Account</h2>
-        <p class="text-gray-500 mt-2">Create your administrator account</p>
+<div style="padding: 36px 32px;">
+    <div style="text-align:center; margin-bottom:28px;">
+        <div style="font-size:22px; font-weight:700; color:#1e293b; margin-bottom:6px;">Admin Account &amp; Site Info</div>
+        <p style="color:#64748b; font-size:14px;">Almost there — create your super admin account</p>
     </div>
 
-    @if($errors->any())
-        <div class="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-            <div class="flex items-start">
-                <svg class="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <ul class="text-sm text-red-600 space-y-1">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-        </div>
-    @endif
+    {{-- Progress bar (visual only) --}}
+    <div style="height:4px; background:#e2e8f0; border-radius:99px; margin-bottom:28px; overflow:hidden;">
+        <div id="progressBar" style="height:100%; width:0%; background:linear-gradient(90deg,#4f46e5,#7c3aed); border-radius:99px; transition:width .4s;"></div>
+    </div>
 
-    <form action="{{ url('/install/admin') }}" method="POST" class="space-y-5">
-        @csrf
+    {{-- Install form --}}
+    <div id="installForm">
+        <div class="section-title">Site Information</div>
 
-        <div>
-            <label for="name" class="block text-sm font-semibold text-gray-700 mb-1.5">Full Name</label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                </div>
-                <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white"
-                       placeholder="Pastor John Doe">
-            </div>
+        <div class="field">
+            <label for="site_name">Site / Church Name</label>
+            <input type="text" id="site_name" name="site_name" class="input" required
+                placeholder="Grace Community Church" autocomplete="organization">
         </div>
 
-        <div>
-            <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">Email Address</label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <input type="email" name="email" id="email" value="{{ old('email') }}" required
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white"
-                       placeholder="admin@church.com">
+        <div class="section-title" style="margin-top:20px;">Super Admin Account</div>
+
+        <div class="field">
+            <label for="admin_name">Full Name</label>
+            <input type="text" id="admin_name" name="admin_name" class="input" required
+                placeholder="John Pastor" autocomplete="name">
+        </div>
+
+        <div class="field">
+            <label for="admin_email">Email Address</label>
+            <input type="email" id="admin_email" name="admin_email" class="input" required
+                placeholder="admin@yourchurch.com" autocomplete="email">
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;" class="field">
+            <div>
+                <label for="admin_pass">Password</label>
+                <input type="password" id="admin_pass" name="admin_pass" class="input" required
+                    placeholder="Min 8 characters" autocomplete="new-password">
+            </div>
+            <div>
+                <label for="admin_pass_confirmation">Confirm Password</label>
+                <input type="password" id="admin_pass_confirmation" name="admin_pass_confirmation" class="input" required
+                    placeholder="Repeat password" autocomplete="new-password">
             </div>
         </div>
 
-        <div>
-            <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <input type="password" name="password" id="password" required
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white"
-                       placeholder="Minimum 8 characters">
-            </div>
-        </div>
+        <div id="formError" style="display:none;" class="alert-err"></div>
 
-        <div>
-            <label for="password_confirmation" class="block text-sm font-semibold text-gray-700 mb-1.5">Confirm Password</label>
-            <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                </div>
-                <input type="password" name="password_confirmation" id="password_confirmation" required
-                       class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors bg-gray-50 focus:bg-white"
-                       placeholder="Re-enter your password">
-            </div>
-        </div>
-
-        <div class="flex items-center justify-between pt-2">
-            <a href="{{ url('/install/database') }}"
-               class="inline-flex items-center px-4 py-2.5 text-gray-600 hover:text-gray-800 font-medium rounded-xl hover:bg-gray-100 transition-colors">
-                <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                </svg>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <a href="/install/database" class="btn-secondary">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 Back
             </a>
-            <button type="submit"
-                    class="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300 hover:-translate-y-0.5">
-                Continue
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
+            <button type="button" onclick="runInstall()" class="btn-primary" id="installBtn">
+                Install Now 🚀
             </button>
         </div>
-    </form>
+    </div>
+
+    {{-- Success state (hidden until install completes) --}}
+    <div id="successPanel" style="display:none; text-align:center; padding: 20px 0;">
+        <div style="font-size:56px; margin-bottom:16px;">🎉</div>
+        <div style="font-size:22px; font-weight:700; color:#166534; margin-bottom:8px;">Installation Complete!</div>
+        <p style="color:#64748b; font-size:14px; margin-bottom:28px;">Your church platform is ready. Welcome aboard!</p>
+        <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <a href="/" class="btn-primary">
+                Visit Your Site
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+            <a href="/admin" class="btn-secondary">
+                Go to Admin Panel
+            </a>
+        </div>
+        <div style="margin-top:24px; padding:14px 16px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; font-size:13px; color:#166534; text-align:left;">
+            <strong>✅ What was set up:</strong>
+            <ul style="margin-top:8px; padding-left:18px; line-height:2;">
+                <li>Database tables created (migrations run)</li>
+                <li>Super admin account created</li>
+                <li>APP_KEY generated &amp; .env written</li>
+                <li>.htaccess files auto-generated</li>
+                <li>Config cached for production</li>
+            </ul>
+        </div>
+        <div style="margin-top:12px; padding:12px 16px; background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; font-size:12px; color:#9a3412;">
+            ⚠️ For security, the installer is now locked. If you need to re-run it, delete <code>storage/installed</code>.
+        </div>
+    </div>
+
+    {{-- Installing state --}}
+    <div id="installingPanel" style="display:none; text-align:center; padding:20px 0;">
+        <div style="font-size:40px; margin-bottom:16px;">⚙️</div>
+        <div style="font-size:18px; font-weight:600; color:#1e293b; margin-bottom:8px;" id="installStatus">Running migrations…</div>
+        <p style="color:#94a3b8; font-size:13px;">This may take a moment. Please don't refresh.</p>
+        <div style="width:200px; height:4px; background:#e2e8f0; border-radius:99px; margin:20px auto; overflow:hidden;">
+            <div style="height:100%; background:linear-gradient(90deg,#4f46e5,#7c3aed); border-radius:99px; animation:loading 1.5s infinite ease-in-out; transform-origin:left;"></div>
+        </div>
+    </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+async function runInstall() {
+    const fields = ['site_name', 'admin_name', 'admin_email', 'admin_pass', 'admin_pass_confirmation'];
+    const data = Object.fromEntries(fields.map(id => [id, document.getElementById(id).value]));
+
+    // Client-side validation
+    if (!data.site_name || !data.admin_name || !data.admin_email || !data.admin_pass) {
+        showError('Please fill in all required fields.');
+        return;
+    }
+    if (data.admin_pass !== data.admin_pass_confirmation) {
+        showError('Passwords do not match.');
+        return;
+    }
+    if (data.admin_pass.length < 8) {
+        showError('Password must be at least 8 characters.');
+        return;
+    }
+
+    // Show installing state
+    document.getElementById('installForm').style.display = 'none';
+    document.getElementById('installingPanel').style.display = 'block';
+
+    const steps = [
+        'Generating APP_KEY…',
+        'Running database migrations…',
+        'Creating admin account…',
+        'Writing .htaccess files…',
+        'Caching configuration…',
+    ];
+    let si = 0;
+    const statusEl = document.getElementById('installStatus');
+    const interval = setInterval(() => {
+        if (si < steps.length - 1) statusEl.textContent = steps[++si];
+    }, 1200);
+
+    try {
+        const resp = await fetch('/install/admin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+            },
+            body: JSON.stringify(data),
+        });
+        clearInterval(interval);
+        const json = await resp.json();
+
+        if (json.ok) {
+            document.getElementById('installingPanel').style.display = 'none';
+            document.getElementById('successPanel').style.display = 'block';
+        } else {
+            document.getElementById('installingPanel').style.display = 'none';
+            document.getElementById('installForm').style.display = 'block';
+            showError(json.message ?? 'Installation failed. Please try again.');
+        }
+    } catch (e) {
+        clearInterval(interval);
+        document.getElementById('installingPanel').style.display = 'none';
+        document.getElementById('installForm').style.display = 'block';
+        showError('Network error: ' + e.message);
+    }
+}
+
+function showError(msg) {
+    const el = document.getElementById('formError');
+    el.style.display = 'block';
+    el.textContent = msg;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+<style>
+@keyframes loading {
+    0%  { transform: scaleX(0); margin-left: 0; }
+    50% { transform: scaleX(1); margin-left: 0; }
+    100%{ transform: scaleX(0); margin-left: 100%; }
+}
+</style>
+@endpush

@@ -3,233 +3,289 @@
 namespace App\Http\Controllers\Installer;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 
 class InstallerController extends Controller
 {
-    // Step 1: Welcome page - show requirements check
+    // ── Step 1: Requirements check ───────────────────────────────────────────
+
     public function welcome()
     {
-        $requirements = [
-            'php_version' => version_compare(PHP_VERSION, '8.1.0', '>='),
-            'pdo' => extension_loaded('pdo'),
-            'pdo_mysql' => extension_loaded('pdo_mysql'),
-            'mbstring' => extension_loaded('mbstring'),
-            'openssl' => extension_loaded('openssl'),
-            'tokenizer' => extension_loaded('tokenizer'),
-            'json' => extension_loaded('json'),
-            'curl' => extension_loaded('curl'),
-            'fileinfo' => extension_loaded('fileinfo'),
-            'gd' => extension_loaded('gd'),
+        $php = [
+            'php_version' => ['label' => 'PHP >= 8.1', 'ok' => version_compare(PHP_VERSION, '8.1.0', '>='), 'value' => PHP_VERSION],
         ];
-        
-        $permissions = [
-            'storage_writable' => is_writable(storage_path()),
-            'cache_writable' => is_writable(storage_path('framework/cache')),
-            'sessions_writable' => is_writable(storage_path('framework/sessions')),
-            'views_writable' => is_writable(storage_path('framework/views')),
-            'env_writable' => is_writable(base_path('.env')) || !file_exists(base_path('.env')),
+
+        $extensions = collect([
+            'pdo', 'pdo_mysql', 'mbstring', 'openssl', 'tokenizer',
+            'json', 'curl', 'fileinfo', 'gd', 'xml', 'bcmath',
+        ])->mapWithKeys(fn ($ext) => [$ext => ['label' => $ext, 'ok' => extension_loaded($ext)]]);
+
+        $permissions = collect([
+            'storage'           => storage_path(),
+            'storage/framework' => storage_path('framework'),
+            'storage/logs'      => storage_path('logs'),
+            'bootstrap/cache'   => base_path('bootstrap/cache'),
+        ])->mapWithKeys(fn ($path, $label) => [$label => ['label' => $label, 'ok' => is_writable($path), 'path' => $path]]);
+
+        $extras = [
+            'vendor_exists' => ['label' => 'vendor/ directory', 'ok' => is_dir(base_path('vendor')), 'note' => 'Run: composer install --no-dev'],
+            'assets_built'  => ['label' => 'public/build/ (frontend)', 'ok' => is_dir(public_path('build')), 'note' => 'Run: npm run build'],
         ];
-        
-        $allPassed = !in_array(false, $requirements) && !in_array(false, $permissions);
-        
-        return view('installer.welcome', compact('requirements', 'permissions', 'allPassed'));
+
+        $allOk = !collect($php)->pluck('ok')->contains(false)
+              && !$extensions->pluck('ok')->contains(false)
+              && !collect($permissions)->pluck('ok')->contains(false)
+              && $extras['vendor_exists']['ok'];
+
+        return view('installer.welcome', compact('php', 'extensions', 'permissions', 'extras', 'allOk'));
     }
-    
-    // Step 2: Database configuration form
+
+    // ── Step 2: Database config ──────────────────────────────────────────────
+
     public function database()
     {
+        if (!session('requirements_passed')) {
+            return redirect('/install');
+        }
         return view('installer.database');
     }
-    
-    // Step 2 POST: Test and save database config
+
+    /** AJAX or POST — test connection without saving */
+    public function testDatabase(Request $request)
+    {
+        $request->validate([
+            'db_host'     => 'required|string',
+            'db_port'     => 'required|integer',
+            'db_database' => 'required|string',
+            'db_username' => 'required|string',
+            'db_password' => 'nullable|string',
+        ]);
+
+        try {
+            $dsn = "mysql:host={$request->db_host};port={$request->db_port};dbname={$request->db_database};charset=utf8mb4";
+            $pdo = new \PDO($dsn, $request->db_username, $request->db_password ?? '');
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $ver = $pdo->query('SELECT VERSION()')->fetchColumn();
+            return response()->json(['ok' => true, 'message' => "Connected — MySQL {$ver}"]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /** Save DB info to .env and proceed to step 3 */
     public function saveDatabase(Request $request)
     {
         $request->validate([
-            'db_host' => 'required',
-            'db_port' => 'required',
-            'db_database' => 'required',
-            'db_username' => 'required',
-            'db_password' => 'nullable',
+            'db_host'     => 'required|string',
+            'db_port'     => 'required|integer',
+            'db_database' => 'required|string',
+            'db_username' => 'required|string',
+            'db_password' => 'nullable|string',
+            'app_url'     => 'required|url',
         ]);
-        
-        // Test connection using PDO
+
+        // Test connection first
         try {
-            $pdo = new \PDO(
-                "mysql:host={$request->db_host};port={$request->db_port};dbname={$request->db_database}",
-                $request->db_username,
-                $request->db_password
-            );
+            $dsn = "mysql:host={$request->db_host};port={$request->db_port};dbname={$request->db_database};charset=utf8mb4";
+            $pdo = new \PDO($dsn, $request->db_username, $request->db_password ?? '');
             $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        } catch (\Exception $e) {
-            return back()->withErrors(['database' => 'Could not connect: ' . $e->getMessage()])->withInput();
+        } catch (\Throwable $e) {
+            return back()->withErrors(['db_host' => 'Connection failed: ' . $e->getMessage()])->withInput();
         }
-        
-        // Update .env file
-        $this->updateEnv([
-            'DB_HOST' => $request->db_host,
-            'DB_PORT' => $request->db_port,
+
+        $this->writeEnv([
+            'APP_URL'     => rtrim($request->app_url, '/'),
+            'DB_HOST'     => $request->db_host,
+            'DB_PORT'     => $request->db_port,
             'DB_DATABASE' => $request->db_database,
             'DB_USERNAME' => $request->db_username,
             'DB_PASSWORD' => $request->db_password ?? '',
         ]);
-        
-        // Store in session for next step
+
+        // Reconnect Laravel's DB with new credentials
+        config([
+            'database.connections.mysql.host'     => $request->db_host,
+            'database.connections.mysql.port'     => $request->db_port,
+            'database.connections.mysql.database' => $request->db_database,
+            'database.connections.mysql.username' => $request->db_username,
+            'database.connections.mysql.password' => $request->db_password ?? '',
+        ]);
+        DB::purge('mysql');
+
         session(['db_configured' => true]);
-        
+
         return redirect('/install/admin');
     }
-    
-    // Step 3: Admin account setup
+
+    // ── Step 3: Admin + site info ────────────────────────────────────────────
+
     public function admin()
     {
+        if (!session('db_configured')) {
+            return redirect('/install/database');
+        }
         return view('installer.admin');
     }
-    
-    // Step 3 POST: Create admin user
-    public function saveAdmin(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'password' => 'required|min:8|confirmed',
-        ]);
-        
-        session([
-            'admin_name' => $request->name,
-            'admin_email' => $request->email,
-            'admin_password' => $request->password,
-        ]);
-        
-        return redirect('/install/church');
-    }
-    
-    // Step 4: Church info
-    public function church()
-    {
-        return view('installer.church');
-    }
-    
-    // Step 4 POST: Save church info
-    public function saveChurch(Request $request)
-    {
-        $request->validate([
-            'church_name' => 'required|string|max:255',
-            'church_email' => 'nullable|email',
-        ]);
-        
-        session([
-            'church_name' => $request->church_name,
-            'church_address' => $request->church_address,
-            'church_phone' => $request->church_phone,
-            'church_email' => $request->church_email,
-            'church_description' => $request->church_description,
-            'facebook_url' => $request->facebook_url,
-            'youtube_url' => $request->youtube_url,
-            'instagram_url' => $request->instagram_url,
-        ]);
-        
-        return redirect('/install/finalize');
-    }
-    
-    // Step 5: Finalize - run migrations, create admin, create settings
-    public function finalize()
-    {
-        return view('installer.finalize');
-    }
-    
-    // Step 5 POST: Execute installation
+
+    /** Run the full installation */
     public function install(Request $request)
     {
+        if (!session('db_configured')) {
+            return response()->json(['ok' => false, 'message' => 'Database not configured.'], 422);
+        }
+
+        $request->validate([
+            'site_name'   => 'required|string|max:255',
+            'admin_name'  => 'required|string|max:255',
+            'admin_email' => 'required|email|max:255',
+            'admin_pass'  => 'required|min:8|confirmed',
+        ]);
+
         try {
-            // Generate app key if not set
-            if (empty(config('app.key')) || config('app.key') === 'base64:') {
-                Artisan::call('key:generate', ['--force' => true]);
-            }
+            // 1. Write site name to .env
+            $this->writeEnv(['APP_NAME' => $request->site_name]);
 
-            // Drop all existing tables and run fresh migrations
-            // This ensures a clean install even if the database had previous tables
-            $tables = DB::select('SHOW TABLES');
-            $dbName = config('database.connections.mysql.database', env('DB_DATABASE'));
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
-            foreach ($tables as $table) {
-                $tableName = $table->{'Tables_in_' . $dbName} ?? reset((array) $table);
-                DB::statement("DROP TABLE IF EXISTS `{$tableName}`");
-            }
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            // 2. Generate APP_KEY if blank
+            Artisan::call('key:generate', ['--force' => true]);
+            Artisan::call('config:clear');
 
-            // Run migrations on clean database
+            // 3. Run migrations
             Artisan::call('migrate', ['--force' => true]);
 
-            // Create admin user
-            $user = User::create([
-                'name' => session('admin_name'),
-                'email' => session('admin_email'),
-                'password' => Hash::make(session('admin_password')),
-                'is_admin' => true,
+            // 4. Seed roles/permissions (if seeder exists)
+            try {
+                Artisan::call('db:seed', ['--class' => 'RolesAndPermissionsSeeder', '--force' => true]);
+            } catch (\Throwable) {
+                // seeder optional
+            }
+
+            // 5. Create admin user
+            $userModel = app(\App\Models\User::class);
+            $admin = $userModel::create([
+                'name'              => $request->admin_name,
+                'email'             => $request->admin_email,
+                'password'          => Hash::make($request->admin_pass),
+                'user_type'         => 'super_admin',
                 'email_verified_at' => now(),
             ]);
 
-            // Create settings
-            Setting::create([
-                'church_name' => session('church_name', 'My Church'),
-                'church_address' => session('church_address'),
-                'church_phone' => session('church_phone'),
-                'church_email' => session('church_email'),
-                'church_description' => session('church_description'),
-                'facebook_url' => session('facebook_url'),
-                'youtube_url' => session('youtube_url'),
-                'instagram_url' => session('instagram_url'),
-            ]);
+            // Assign super_admin role if Spatie is set up
+            try { $admin->assignRole('super_admin'); } catch (\Throwable) {}
 
-            // Create storage link (ignore if already exists)
+            // 6. Create Setting record if model exists
             try {
-                Artisan::call('storage:link');
-            } catch (\Exception $e) {
-                // Storage link may already exist on shared hosting
-            }
+                if (class_exists(\App\Models\Setting::class)) {
+                    \App\Models\Setting::firstOrCreate([], [
+                        'church_name' => $request->site_name,
+                    ]);
+                }
+            } catch (\Throwable) {}
 
-            // Mark as installed
-            File::put(storage_path('installed'), 'Installed on: ' . now());
+            // 7. Storage link
+            try { Artisan::call('storage:link'); } catch (\Throwable) {}
 
-            // Clear session data
-            session()->forget(['db_configured', 'admin_name', 'admin_email', 'admin_password', 'church_name', 'church_address', 'church_phone', 'church_email', 'church_description', 'facebook_url', 'youtube_url', 'instagram_url']);
+            // 8. Write .htaccess files
+            $this->writeHtaccess();
 
-            return response()->json(['success' => true, 'message' => 'Installation completed successfully!']);
+            // 9. Cache config for production
+            try {
+                Artisan::call('config:cache');
+                Artisan::call('route:cache');
+            } catch (\Throwable) {}
 
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Installation failed: ' . $e->getMessage()], 500);
+            // 10. Mark installed
+            File::put(storage_path('installed'), now()->toDateTimeString());
+
+            return response()->json(['ok' => true, 'redirect' => '/']);
+
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
         }
     }
-    
-    // Helper method to update .env values
-    private function updateEnv(array $data)
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Write/update key=value pairs in .env */
+    private function writeEnv(array $data): void
     {
-        $envFile = base_path('.env');
-        
-        if (!File::exists($envFile)) {
-            File::copy(base_path('.env.example'), $envFile);
+        $envPath = base_path('.env');
+
+        if (!File::exists($envPath)) {
+            $example = base_path('.env.example');
+            File::copy(File::exists($example) ? $example : '/dev/null', $envPath);
         }
-        
-        $envContent = File::get($envFile);
-        
+
+        $content = File::get($envPath);
+
         foreach ($data as $key => $value) {
-            // Wrap value in quotes if it contains spaces
-            $quotedValue = str_contains($value, ' ') ? '"' . $value . '"' : $value;
-            
-            if (preg_match("/^{$key}=.*/m", $envContent)) {
-                $envContent = preg_replace("/^{$key}=.*/m", "{$key}={$quotedValue}", $envContent);
+            // Quote values with spaces or special chars
+            $safe = preg_match('/[\s#"\'\\\\]/', (string) $value)
+                ? '"' . addslashes((string) $value) . '"'
+                : (string) $value;
+
+            if (preg_match("/^{$key}=/m", $content)) {
+                $content = preg_replace("/^{$key}=.*/m", "{$key}={$safe}", $content);
             } else {
-                $envContent .= "\n{$key}={$quotedValue}";
+                $content .= "\n{$key}={$safe}";
             }
         }
-        
-        File::put($envFile, $envContent);
+
+        File::put($envPath, $content);
+    }
+
+    /** Auto-generate both .htaccess files for shared hosting */
+    private function writeHtaccess(): void
+    {
+        // Root .htaccess — redirects everything to public/
+        $rootHtaccess = base_path('.htaccess');
+        if (!File::exists($rootHtaccess)) {
+            File::put($rootHtaccess, <<<'HTACCESS'
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect all requests to public/
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /public/$1 [L]
+</IfModule>
+
+# Deny access to sensitive files
+<FilesMatch "(^\.env|composer\.json|composer\.lock|artisan|socket-server\.php)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+HTACCESS);
+        }
+
+        // public/.htaccess — standard Laravel rewrite
+        $publicHtaccess = public_path('.htaccess');
+        if (!File::exists($publicHtaccess)) {
+            File::put($publicHtaccess, <<<'HTACCESS'
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+HTACCESS);
+        }
     }
 }

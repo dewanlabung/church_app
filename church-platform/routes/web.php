@@ -12,17 +12,20 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Installer Routes
+// Installer Routes — 3-step wizard
 Route::prefix('install')->group(function () {
-    Route::get('/', [InstallerController::class, 'welcome'])->name('installer.welcome');
-    Route::get('/database', [InstallerController::class, 'database'])->name('installer.database');
-    Route::post('/database', [InstallerController::class, 'saveDatabase']);
-    Route::get('/admin', [InstallerController::class, 'admin'])->name('installer.admin');
-    Route::post('/admin', [InstallerController::class, 'saveAdmin']);
-    Route::get('/church', [InstallerController::class, 'church'])->name('installer.church');
-    Route::post('/church', [InstallerController::class, 'saveChurch']);
-    Route::get('/finalize', [InstallerController::class, 'finalize'])->name('installer.finalize');
-    Route::post('/finalize', [InstallerController::class, 'install']);
+    // Step 1 — Requirements check
+    Route::get('/',         [InstallerController::class, 'welcome'])->name('installer.welcome');
+    Route::post('/proceed', fn () => redirect('/install/database'))->name('installer.proceed');
+
+    // Step 2 — Database configuration
+    Route::get('/database',       [InstallerController::class, 'database'])->name('installer.database');
+    Route::post('/database/test', [InstallerController::class, 'testDatabase'])->name('installer.db.test');
+    Route::post('/database',      [InstallerController::class, 'saveDatabase'])->name('installer.db.save');
+
+    // Step 3 — Admin account + run installation
+    Route::get('/admin',  [InstallerController::class, 'admin'])->name('installer.admin');
+    Route::post('/admin', [InstallerController::class, 'install'])->name('installer.install');
 });
 
 // Auth Routes
