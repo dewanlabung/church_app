@@ -21,6 +21,7 @@ Route::get('/theme/css',                [ThemeController::class, 'css']);
 Route::get('/theme/manifest',           [ThemeController::class, 'manifest']);
 Route::get('/translations/{language}',  [LocalizationController::class, 'translations']);
 Route::get('/pwa-config',               [GeneralSettingsController::class, 'pwaConfig']);
+Route::get('/pwa/manifest.json',        [GeneralSettingsController::class, 'pwaConfig']); // <link rel="manifest"> target
 
 Route::middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
     // General

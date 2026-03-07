@@ -126,7 +126,9 @@ Route::get('/library', [PublicContentController::class, 'library'])->name('publi
 Route::get('/library/{slug}', [PublicContentController::class, 'book'])->name('public.book');
 Route::get('/about', [PublicContentController::class, 'about'])->name('public.about');
 
-// Frontend catch-all (SPA for remaining pages)
+// Frontend catch-all — serves React PWA shell
+// The old 'welcome' view still works; new 'app' view uses TypeScript/Zustand stack.
+// Switch to 'app' once you're ready to cut over to the new frontend.
 Route::get('/{any?}', function () {
-    return view('welcome');
+    return view('app');
 })->where('any', '.*')->name('home');
