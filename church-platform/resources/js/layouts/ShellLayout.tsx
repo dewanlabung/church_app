@@ -10,6 +10,7 @@ import { api } from '@/hooks/useApi';
 
 const navItems = [
   { to: '/',              icon: '🏠', label: 'Home' },
+  { to: '/search',        icon: '🔍', label: 'Search' },
   { to: '/prayer',        icon: '🙏', label: 'Prayer' },
   { to: '/events',        icon: '📅', label: 'Events' },
   { to: '/bible-studies', icon: '📖', label: 'Bible' },

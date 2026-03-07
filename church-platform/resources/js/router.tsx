@@ -24,6 +24,7 @@ const PluginManager  = lazy(() => import('@/plugins/admin/PluginManagerPage'));
 const ThemesPage     = lazy(() => import('@/plugins/admin/ThemesPage'));
 const UsersAdmin     = lazy(() => import('@/plugins/admin/UsersPage'));
 const SettingsAdmin  = lazy(() => import('@/plugins/admin/SettingsPage'));
+const SearchPage     = lazy(() => import('@/plugins/search/SearchPage'));
 
 // ── Guards ────────────────────────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
       { path: 'communities',              element: load(<CommunityPage />) },
       { path: 'c/:slug',                  element: load(<CommunityPage />) },
       { path: 'church/:slug',             element: load(<ChurchPageView />) },
+      { path: 'search',                   element: load(<SearchPage />) },
       { path: 'profile',                  element: <RequireAuth>{load(<ProfilePage />)}</RequireAuth> },
       { path: '@:username',               element: load(<ProfilePage />) },
     ],
