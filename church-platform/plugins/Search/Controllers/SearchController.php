@@ -62,8 +62,8 @@ class SearchController extends Controller
             ->select([
                 'p.id', 'p.type', 'p.body', 'p.created_at',
                 'u.id as user_id', 'u.name as user_name', 'u.avatar',
-                DB::raw("MATCH(p.body) AGAINST('{$ft}' IN BOOLEAN MODE) AS relevance"),
             ])
+            ->selectRaw('MATCH(p.body) AGAINST(? IN BOOLEAN MODE) AS relevance', [$ft])
             ->whereRaw("MATCH(p.body) AGAINST(? IN BOOLEAN MODE)", [$ft])
             ->where('p.privacy', 'public')
             ->orderByDesc('relevance')
@@ -90,10 +90,8 @@ class SearchController extends Controller
         $offset = ($page - 1) * self::PER_PAGE;
 
         $rows = DB::table('users')
-            ->select([
-                'id', 'name', 'avatar', 'user_type', 'created_at',
-                DB::raw("MATCH(name) AGAINST('{$ft}' IN BOOLEAN MODE) AS relevance"),
-            ])
+            ->select(['id', 'name', 'avatar', 'user_type', 'created_at'])
+            ->selectRaw('MATCH(name) AGAINST(? IN BOOLEAN MODE) AS relevance', [$ft])
             ->whereRaw("MATCH(name) AGAINST(? IN BOOLEAN MODE)", [$ft])
             ->orderByDesc('relevance')
             ->limit(self::PER_PAGE)
@@ -118,10 +116,8 @@ class SearchController extends Controller
         $offset = ($page - 1) * self::PER_PAGE;
 
         $rows = DB::table('communities')
-            ->select([
-                'id', 'name', 'about', 'type', 'member_count', 'created_at',
-                DB::raw("MATCH(name, about) AGAINST('{$ft}' IN BOOLEAN MODE) AS relevance"),
-            ])
+            ->select(['id', 'name', 'about', 'type', 'member_count', 'created_at'])
+            ->selectRaw('MATCH(name, about) AGAINST(? IN BOOLEAN MODE) AS relevance', [$ft])
             ->whereRaw("MATCH(name, about) AGAINST(? IN BOOLEAN MODE)", [$ft])
             ->where('type', '!=', 'hidden')
             ->orderByDesc('relevance')
@@ -148,10 +144,8 @@ class SearchController extends Controller
         $offset = ($page - 1) * self::PER_PAGE;
 
         $rows = DB::table('church_pages')
-            ->select([
-                'id', 'name', 'about', 'slug', 'logo', 'denomination', 'created_at',
-                DB::raw("MATCH(name, about) AGAINST('{$ft}' IN BOOLEAN MODE) AS relevance"),
-            ])
+            ->select(['id', 'name', 'about', 'slug', 'logo', 'denomination', 'created_at'])
+            ->selectRaw('MATCH(name, about) AGAINST(? IN BOOLEAN MODE) AS relevance', [$ft])
             ->whereRaw("MATCH(name, about) AGAINST(? IN BOOLEAN MODE)", [$ft])
             ->orderByDesc('relevance')
             ->limit(self::PER_PAGE)
