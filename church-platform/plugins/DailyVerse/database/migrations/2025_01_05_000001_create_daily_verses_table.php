@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('daily_verses')) return;
+
         Schema::create('daily_verses', function (Blueprint $table) {
             $table->id();
             $table->date('date')->unique()->nullable(); // null = pool (no specific date)

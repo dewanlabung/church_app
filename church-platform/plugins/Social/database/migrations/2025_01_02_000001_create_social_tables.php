@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('social_follows')) return;
+
         // Follows
         Schema::create('social_follows', function (Blueprint $table) {
             $table->id();
