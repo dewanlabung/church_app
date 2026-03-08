@@ -8,6 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('settings', 'mail_provider')) return;
+
         Schema::table('settings', function (Blueprint $table) {
             // Email provider: smtp, mailchimp, sendgrid, mailgun, ses
             $table->string('mail_provider')->default('smtp')->after('custom_js');

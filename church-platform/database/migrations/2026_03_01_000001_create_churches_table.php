@@ -65,9 +65,11 @@ return new class extends Migration
         }
 
         // Add church_id to users for Church Admin assignment
-        Schema::table('users', function (Blueprint $table) {
+        if (!Schema::hasColumn('users', 'church_id')) {
+            Schema::table('users', function (Blueprint $table) {
                 $table->foreignId('church_id')->nullable()->after('role_id')->constrained('churches')->nullOnDelete();
             });
+        }
     }
 
     public function down(): void
