@@ -14,13 +14,13 @@ return new class extends Migration
         if (Schema::hasTable('prayer_requests')) {
             Schema::table('prayer_requests', function (Blueprint $table) {
                 if (!Schema::hasColumn('prayer_requests', 'description')) {
-                    $table->text('description')->nullable()->after('request');
+                $table->text('description')->nullable()->after('request');
                 }
                 if (!Schema::hasColumn('prayer_requests', 'phone')) {
-                    $table->string('phone', 20)->nullable()->after('email');
+                $table->string('phone', 20)->nullable()->after('email');
                 }
                 if (!Schema::hasColumn('prayer_requests', 'is_urgent')) {
-                    $table->boolean('is_urgent')->default(false)->after('is_anonymous');
+                $table->boolean('is_urgent')->default(false)->after('is_anonymous');
                 }
             });
         }
@@ -29,16 +29,16 @@ return new class extends Migration
         if (Schema::hasTable('sermons')) {
             Schema::table('sermons', function (Blueprint $table) {
                 if (!Schema::hasColumn('sermons', 'is_published')) {
-                    $table->boolean('is_published')->default(false)->after('is_active');
+                $table->boolean('is_published')->default(false)->after('is_active');
                 }
                 if (!Schema::hasColumn('sermons', 'duration')) {
-                    $table->string('duration', 20)->nullable()->after('duration_minutes');
+                $table->string('duration', 20)->nullable()->after('duration_minutes');
                 }
                 if (!Schema::hasColumn('sermons', 'thumbnail')) {
-                    $table->string('thumbnail')->nullable()->after('image');
+                $table->string('thumbnail')->nullable()->after('image');
                 }
                 if (!Schema::hasColumn('sermons', 'tags')) {
-                    $table->text('tags')->nullable()->after('meta_description');
+                $table->text('tags')->nullable()->after('meta_description');
                 }
             });
         }
@@ -47,23 +47,23 @@ return new class extends Migration
         if (Schema::hasTable('books')) {
             Schema::table('books', function (Blueprint $table) {
                 if (!Schema::hasColumn('books', 'publisher')) {
-                    $table->string('publisher')->nullable()->after('isbn');
+                $table->string('publisher')->nullable()->after('isbn');
                 }
                 if (!Schema::hasColumn('books', 'is_free')) {
-                    $table->boolean('is_free')->default(false)->after('is_active');
+                $table->boolean('is_free')->default(false)->after('is_active');
                 }
                 if (!Schema::hasColumn('books', 'is_published')) {
-                    $table->boolean('is_published')->default(true)->after('is_active');
+                $table->boolean('is_published')->default(true)->after('is_active');
                 }
                 if (!Schema::hasColumn('books', 'tags')) {
-                    $table->text('tags')->nullable()->after('meta_description');
+                $table->text('tags')->nullable()->after('meta_description');
                 }
             });
             // Make pdf_file nullable for books without PDF
             if (Schema::hasColumn('books', 'pdf_file')) {
                 Schema::table('books', function (Blueprint $table) {
-                    $table->string('pdf_file')->nullable()->change();
-                });
+                $table->string('pdf_file')->nullable()->change();
+            });
             }
         }
 
@@ -71,22 +71,22 @@ return new class extends Migration
         if (Schema::hasTable('bible_studies')) {
             Schema::table('bible_studies', function (Blueprint $table) {
                 if (!Schema::hasColumn('bible_studies', 'difficulty')) {
-                    $table->string('difficulty')->nullable()->after('difficulty_level');
+                $table->string('difficulty')->nullable()->after('difficulty_level');
                 }
                 if (!Schema::hasColumn('bible_studies', 'is_published')) {
-                    $table->boolean('is_published')->default(false)->after('is_active');
+                $table->boolean('is_published')->default(false)->after('is_active');
                 }
                 if (!Schema::hasColumn('bible_studies', 'cover_image')) {
-                    $table->string('cover_image')->nullable()->after('image');
+                $table->string('cover_image')->nullable()->after('image');
                 }
                 if (!Schema::hasColumn('bible_studies', 'attachment')) {
-                    $table->string('attachment')->nullable()->after('pdf_attachment');
+                $table->string('attachment')->nullable()->after('pdf_attachment');
                 }
                 if (!Schema::hasColumn('bible_studies', 'author')) {
-                    $table->string('author')->nullable()->after('author_id');
+                $table->string('author')->nullable()->after('author_id');
                 }
                 if (!Schema::hasColumn('bible_studies', 'tags')) {
-                    $table->text('tags')->nullable()->after('meta_description');
+                $table->text('tags')->nullable()->after('meta_description');
                 }
             });
         }
@@ -95,10 +95,10 @@ return new class extends Migration
         if (Schema::hasTable('contact_messages')) {
             Schema::table('contact_messages', function (Blueprint $table) {
                 if (!Schema::hasColumn('contact_messages', 'read_at')) {
-                    $table->timestamp('read_at')->nullable()->after('is_read');
+                $table->timestamp('read_at')->nullable()->after('is_read');
                 }
                 if (!Schema::hasColumn('contact_messages', 'reply_message')) {
-                    $table->text('reply_message')->nullable()->after('admin_reply');
+                $table->text('reply_message')->nullable()->after('admin_reply');
                 }
             });
         }
@@ -107,10 +107,10 @@ return new class extends Migration
         if (Schema::hasTable('newsletter_subscribers')) {
             Schema::table('newsletter_subscribers', function (Blueprint $table) {
                 if (!Schema::hasColumn('newsletter_subscribers', 'subscribed_at')) {
-                    $table->timestamp('subscribed_at')->nullable()->after('token');
+                $table->timestamp('subscribed_at')->nullable()->after('token');
                 }
                 if (!Schema::hasColumn('newsletter_subscribers', 'unsubscribed_at')) {
-                    $table->timestamp('unsubscribed_at')->nullable()->after('subscribed_at');
+                $table->timestamp('unsubscribed_at')->nullable()->after('subscribed_at');
                 }
             });
         }
@@ -119,13 +119,13 @@ return new class extends Migration
         if (Schema::hasTable('users')) {
             Schema::table('users', function (Blueprint $table) {
                 if (!Schema::hasColumn('users', 'role_id')) {
-                    $table->unsignedBigInteger('role_id')->nullable()->after('is_admin');
+                $table->unsignedBigInteger('role_id')->nullable()->after('is_admin');
                 }
                 if (!Schema::hasColumn('users', 'provider')) {
-                    $table->string('provider')->nullable()->after('remember_token');
+                $table->string('provider')->nullable()->after('remember_token');
                 }
                 if (!Schema::hasColumn('users', 'provider_id')) {
-                    $table->string('provider_id')->nullable()->after('provider');
+                $table->string('provider_id')->nullable()->after('provider');
                 }
             });
         }
@@ -134,19 +134,19 @@ return new class extends Migration
         if (Schema::hasTable('posts')) {
             Schema::table('posts', function (Blueprint $table) {
                 if (!Schema::hasColumn('posts', 'page_type')) {
-                    $table->string('page_type')->default('post')->after('status');
+                $table->string('page_type')->default('post')->after('status');
                 }
                 if (!Schema::hasColumn('posts', 'parent_id')) {
-                    $table->unsignedBigInteger('parent_id')->nullable()->after('page_type');
+                $table->unsignedBigInteger('parent_id')->nullable()->after('page_type');
                 }
                 if (!Schema::hasColumn('posts', 'template')) {
-                    $table->string('template')->nullable()->after('parent_id');
+                $table->string('template')->nullable()->after('parent_id');
                 }
                 if (!Schema::hasColumn('posts', 'category_id')) {
-                    $table->unsignedBigInteger('category_id')->nullable()->after('category');
+                $table->unsignedBigInteger('category_id')->nullable()->after('category');
                 }
                 if (!Schema::hasColumn('posts', 'sort_order')) {
-                    $table->integer('sort_order')->default(0)->after('view_count');
+                $table->integer('sort_order')->default(0)->after('view_count');
                 }
             });
         }

@@ -127,7 +127,7 @@ return new class extends Migration
             if (!Schema::hasColumn('settings', 'queue_driver')) {
                 $table->string('queue_driver', 20)->default('sync')->after('log_channel');
             }
-        });
+            });
 
         // Create CSS themes table (BeMusic-style)
         if (!Schema::hasTable('css_themes')) {

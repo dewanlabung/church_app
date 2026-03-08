@@ -177,6 +177,40 @@ step_migrate() {
         fail ".env not found — run setup first: bash deploy.sh setup"
         return
     fi
+    # Auto-drop orphaned tables: tables that exist in DB but whose creating
+    # migration has NOT been recorded in the migrations table yet.
+    # This handles servers where schema was imported manually or a previous
+    # migrate run crashed halfway.
+    info "Checking for orphaned tables..."
+    $PHP artisan tinker --execute="
+        try {
+            \$ran = DB::table('migrations')->pluck('migration')->toArray();
+        } catch(\Exception \$e) {
+            echo 'Clean DB — skipping orphan check.';
+            exit(0);
+        }
+        \$allFiles = collect(glob(database_path('migrations/*.php')))
+            ->map(fn(\$f) => basename(\$f, '.php'));
+        \$pending = \$allFiles->diff(\$ran);
+        if (\$pending->isEmpty()) { echo 'No pending migrations.'; exit(0); }
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        \$dropped = [];
+        foreach (\$pending as \$migration) {
+            \$file = database_path('migrations/'.\$migration.'.php');
+            if (!file_exists(\$file)) continue;
+            \$content = file_get_contents(\$file);
+            preg_match_all('/Schema::create\s*\(\s*[\'\"]([\w]+)[\'\"]/', \$content, \$matches);
+            foreach (\$matches[1] as \$table) {
+                if (Schema::hasTable(\$table)) {
+                    Schema::drop(\$table);
+                    \$dropped[] = \$table;
+                    echo \"Dropped orphaned table: {\$table}\n\";
+                }
+            }
+        }
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        if (empty(\$dropped)) { echo 'No orphaned tables found.'; }
+    " 2>/dev/null
     if $PHP artisan migrate --force 2>&1; then
         ok "Migrations complete"
     else
