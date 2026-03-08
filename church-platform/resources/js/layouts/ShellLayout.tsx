@@ -15,6 +15,7 @@ const navItems = [
   { to: '/events',        icon: '📅', label: 'Events' },
   { to: '/bible-studies', icon: '📖', label: 'Bible' },
   { to: '/communities',   icon: '👥', label: 'Groups' },
+  { to: '/chat',          icon: '💬', label: 'Chat' },
 ];
 
 export default function ShellLayout() {
@@ -181,6 +182,11 @@ function NotificationBell() {
                 </div>
               ))
             )}
+          </div>
+          <div className="px-4 py-2 border-t border-[var(--color-border)] flex justify-between items-center">
+            <NavLink to="/notifications/preferences" onClick={() => setOpen(false)} className="text-xs text-[var(--color-primary)] hover:underline">
+              Preferences
+            </NavLink>
           </div>
         </div>
       )}

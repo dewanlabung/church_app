@@ -25,6 +25,8 @@ const ThemesPage     = lazy(() => import('@/plugins/admin/ThemesPage'));
 const UsersAdmin     = lazy(() => import('@/plugins/admin/UsersPage'));
 const SettingsAdmin  = lazy(() => import('@/plugins/admin/SettingsPage'));
 const SearchPage     = lazy(() => import('@/plugins/search/SearchPage'));
+const ChatPage       = lazy(() => import('@/plugins/chat/ChatPage'));
+const NotifPrefsPage = lazy(() => import('@/plugins/settings/NotificationPreferencesPage'));
 
 // ── Guards ────────────────────────────────────────────────────────────────
 
@@ -92,6 +94,9 @@ export const router = createBrowserRouter([
       { path: 'church/:slug',             element: load(<ChurchPageView />) },
       { path: 'search',                   element: load(<SearchPage />) },
       { path: 'profile',                  element: <RequireAuth>{load(<ProfilePage />)}</RequireAuth> },
+      { path: 'notifications/preferences',element: <RequireAuth>{load(<NotifPrefsPage />)}</RequireAuth> },
+      { path: 'chat',                     element: <RequireAuth>{load(<ChatPage />)}</RequireAuth> },
+      { path: 'chat/:peerId',             element: <RequireAuth>{load(<ChatPage />)}</RequireAuth> },
       { path: '@:username',               element: load(<ProfilePage />) },
     ],
   },
