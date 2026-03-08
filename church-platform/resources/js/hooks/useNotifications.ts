@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
-import { useSocket } from './useSocket';
+import { socketOn } from './useSocket';
 
 // ── Notification store ────────────────────────────────────────────────────────
 
@@ -36,26 +36,17 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
  * Mount this once near the root of the authenticated UI (e.g. ShellLayout).
  */
 export function useNotifications(): void {
-  const { socket } = useSocket();
-  const increment  = useNotificationStore((s) => s.increment);
-  const setLatest  = useNotificationStore((s) => s.setLatest);
+  const increment = useNotificationStore((s) => s.increment);
+  const setLatest = useNotificationStore((s) => s.setLatest);
 
   useEffect(() => {
-    if (!socket) return;
+    const off = socketOn('notification', (data) => {
+      const payload = data as NotificationPayload;
+      if (!payload?.id) return;
+      increment();
+      setLatest(payload);
+    });
 
-    function onMessage(raw: string) {
-      try {
-        const msg = JSON.parse(raw) as { type: string; data?: NotificationPayload };
-        if (msg.type !== 'notification' || !msg.data) return;
-
-        increment();
-        setLatest(msg.data);
-      } catch {
-        // ignore malformed messages
-      }
-    }
-
-    socket.on('message', onMessage);
-    return () => { socket.off('message', onMessage); };
-  }, [socket, increment, setLatest]);
+    return off;
+  }, [increment, setLatest]);
 }
